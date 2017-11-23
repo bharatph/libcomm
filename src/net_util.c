@@ -24,7 +24,9 @@ int write_data(int sockfd, const char *in_buffer, int blen){
 	return bwrite; //here it indicates error or success
 }
 
-int writeln(int sockfd, char *buf, int len){
+int writeln(int sockfd, const char *bufc, int len){
+	char *buf = (char*)malloc(len);
+	strcpy(buf, bufc); //TODO check for safety
 	int bwrite = write(sockfd, buf, len);
 	//log_inf("CLIENT", "written buf: %s, sent: %d", buf, bwrite);
 	if(bwrite > 0){
@@ -45,6 +47,7 @@ int writeln(int sockfd, char *buf, int len){
 		log_inf("CLIENT", "write error, exiting...");
 		return -1;
 	}
+	return -1;
 }
 
 /*
@@ -81,7 +84,7 @@ int read_data(int sockfd, char *buffer, int rlen){
 	return read_bytes;
 }
 
-char *readln(int sockfd){
+const char *readln(int sockfd){
 		char *buf = (char *)malloc(256);
 		int ptr = 0;
 		memset(buf, '\0', 256);

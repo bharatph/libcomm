@@ -18,6 +18,11 @@
 
 #ifdef CLOG_H
 #include <clog/clog.h>
+#else
+#define log_inf(...)
+#define log_err(...)
+#define log_per(...)
+#define log_fat(...)
 #endif
 
 #ifndef BUFFER_SIZE
@@ -36,7 +41,7 @@
 
 int write_data(int sockfd, const char *in_buffer, int blen);
 
-int writeln(int sockfd, char *buf, int len);
+int writeln(int, const char *, int);
 
 /*
  * Write a file to a socket
@@ -51,7 +56,7 @@ int write_file(int sockfd, const char *file);
  */
 int read_data(int sockfd, char *buffer, int rlen);
 
-char *readln(int sockfd);
+const char *readln(int sockfd);
 
 /** Read data from the given socket
  * @param sockfd The socket descriptor to read form

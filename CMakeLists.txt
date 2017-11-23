@@ -4,6 +4,7 @@ file(GLOB_RECURSE net_util_HDRS "include/*.h")
 file(GLOB_RECURSE net_util_SRCS "src/*.c")
 
 add_library(net_util SHARED ${net_util_HDRS} ${net_util_SRCS})
+target_link_libraries(net_util clog)
 set_target_properties(net_util PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(net_util PROPERTIES SOVERSION 1)
 set_target_properties(net_util PROPERTIES PUBLIC_HEADER ${net_util_HDRS})
