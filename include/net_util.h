@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include<string.h>
 #if defined(__linux__) || defined(__APPLE__)
-
 #if defined(__linux__) && defined(kernel_version_2_4) 
 #include <sys/sendfile.h>
 #endif
@@ -14,6 +13,12 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#elif _WIN32
+#include <windows.h>
+#include <ws2tcpip.h>
+#include<winsock2.h>
+#else
+#error Os not suuported
 #endif
 
 #ifdef CLOG_H

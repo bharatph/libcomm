@@ -11,10 +11,10 @@ int write_data(int sockfd, const char *in_buffer, int blen){
 	strcpy(buffer, in_buffer);
 	ssize_t bwrite = -1;
 	ssize_t write_len = blen;
-	bwrite = write(sockfd, buffer, write_len);
+	bwrite = send(sockfd, buffer, write_len, 0);
 	while(bwrite > 0 ){
 		write_len -= bwrite;
-		bwrite = write(sockfd, buffer, write_len);
+		bwrite = send(sockfd, buffer, write_len, 0);
 	}
 	if(bwrite == -1){
 		printf("write failed");
@@ -27,14 +27,14 @@ int write_data(int sockfd, const char *in_buffer, int blen){
 int writeln(int sockfd, const char *bufc, int len){
 	char *buf = (char*)malloc(len);
 	strcpy(buf, bufc); //TODO check for safety
-	int bwrite = write(sockfd, buf, len);
+	int bwrite = send(sockfd, buf, len, 0);
 	//log_inf("CLIENT", "written buf: %s, sent: %d", buf, bwrite);
 	if(bwrite > 0){
 		if(bwrite < len){
 			return writeln(sockfd, buf+bwrite, len - bwrite);
 		}
 		if(bwrite == len){
-			write(sockfd, "\n", 1);
+			send(sockfd, "\n", 1, 0);
 			//log_inf("CLIENT", "write sucessful");
 			return 0;
 		}
@@ -78,7 +78,7 @@ int write_file(int sockfd, const char *file){
 int read_data(int sockfd, char *buffer, int rlen){
 	ssize_t read_bytes = -1;
 	int i = 0;
-	while((read_bytes = read(sockfd, buffer+i, 1)) >  0){
+	while((read_bytes = recv(sockfd, buffer+i, 1, 0)) >  0){
 		i++;
 	}
 	return read_bytes;
@@ -90,7 +90,7 @@ const char *readln(int sockfd){
 		memset(buf, '\0', 256);
 		int quit=0;
 		for(ptr=0;quit!=1;ptr++){
-			int bread = read(sockfd, buf+ptr, 1);
+			int bread = recv(sockfd, buf+ptr, 1, 0);
 			if(bread > 0){
 				//log_inf("SERVER", "Content read[%d]: %c", ptr, buf[ptr]);
 				if(buf[ptr] == '\n'){
@@ -133,7 +133,12 @@ FILE *read_file(int sockfd){
 }
 
 int disconnect_server(int sockfd){
-	if(close(sockfd) == -1){
+#if defined(_WIN32)
+    if(closesocket(sockfd) == -1)
+#else
+	if(close(sockfd) == -1)
+#endif
+	{
 		log_err(_NET_TAG, "Disconnection Unsuccesful");
         return -1;
 	}
@@ -168,7 +173,11 @@ int connect_server (const char * hostname, int port){
 	while (connect (sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) == -1){
 		if(i++ > CON_MAX_ATTEMPTS){
 			//guess other hostnames for the user
+#ifdef _WIN32
+            closesocket(sockfd);
+#else
 			close(sockfd);
+#endif
 			log_err(_NET_TAG, "cannot establish connection to %s on port %d", hostname, port);
 			return -1;
 		}
