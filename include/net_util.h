@@ -1,10 +1,12 @@
 #ifndef _NET_TAG
 #define _NET_TAG "NETWORK_UTIL"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include<string.h>
+
 #if defined(__linux__) || defined(__APPLE__)
-#if defined(__linux__) && defined(kernel_version_2_4) 
+#if defined(__linux__) && defined(kernel_version_2_4)
 #include <sys/sendfile.h>
 #endif
 #include <unistd.h>
@@ -14,9 +16,11 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #elif _WIN32
+
 #include <windows.h>
 #include <ws2tcpip.h>
 #include<winsock2.h>
+
 #else
 #error Os not suuported
 #endif
@@ -70,7 +74,7 @@ FILE *read_file(int sockfd);
 
 int disconnect_server(int sockfd);
 
-int connect_server (const char * hostname, int port);
+int connect_server(const char *hostname, int port);
 
 #ifndef SERV_BACKLOG
 #define SERV_BACKLOG 10
@@ -83,4 +87,5 @@ int connect_server (const char * hostname, int port);
  * @return Socket descriptor of the started server
  */
 int start_server(int port);
+
 #endif
