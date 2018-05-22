@@ -45,7 +45,7 @@ typedef int SOCKET;
  * 1 for failure
  */
 
-int comm_write_data(SOCKET sockfd, void *buffer);
+int comm_write_data(SOCKET sockfd, const void *buffer);
 
 /*
  * Read data from a socket
@@ -73,6 +73,6 @@ int comm_connect_server(const char *hostname, int port);
  * @param port Port number for the server to start
  * @return Socket descriptor of the started server
  */
-int comm_start_server(SOCKET port);
+int comm_start_server(int port);
 
 #endif

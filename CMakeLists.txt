@@ -16,7 +16,7 @@ target_link_libraries(comm -lclog)
 
 install(FILES ${comm_HDRS} DESTINATION include/comm)
 install(TARGETS comm
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION bin
+        RUNTIME DESTINATION lib
+        LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         PUBLIC_HEADER DESTINATION include)
