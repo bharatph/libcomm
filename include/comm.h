@@ -1,5 +1,8 @@
 #ifndef _COMM
 #define _COMM "COMM"
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,17 +27,9 @@ typedef int SOCKET;
 #error OS not supported
 #endif
 
-#ifndef BUFFER_SIZE
-#define BUFFER_SIZE 256
-#endif
-
-#ifndef CON_MAX_ATTEMPTS
-#define CON_MAX_ATTEMPTS 5
-#endif
-
-#ifndef SERV_BACKLOG
-#define SERV_BACKLOG 10
-#endif
+#define COMM_BUFFER_SIZE 256
+#define COMM_CON_MAX_ATTEMPTS 5
+#define COMM_SERV_BACKLOG 10
 
 /*
  * Write data to a given socket
@@ -75,4 +70,7 @@ int comm_connect_server(const char *hostname, int port);
  */
 int comm_start_server(int port);
 
+#ifdef __cplusplus
+}
+#endif
 #endif

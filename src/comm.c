@@ -28,11 +28,23 @@ int comm_write_data(SOCKET sockfd, const void *in_buffer)
 void *comm_read_data(SOCKET sockfd)
 {
     ssize_t read_bytes = -1;
-    void *buffer = (void *)malloc(sizeof(char) * 256);
+    int new_buffer_size = 0;
+    void *buffer = (void *)malloc(sizeof(char) * COMM_BUFFER_SIZE);
     int i = 0;
-    while ((read_bytes = recv(sockfd, buffer + i, 1, 0)) > 0)
+    while ((read_bytes = recv(sockfd, buffer + i, COMM_BUFFER_SIZE, 0)) > 0)
     {
-        i++;
+        if (read_bytes == EOF)
+            break;
+        i += read_bytes;
+        if ((i - COMM_BUFFER_SIZE) >= new_buffer_size)
+        {
+            new_buffer_size += COMM_BUFFER_SIZE;
+            void *new_buffer = realloc(buffer, new_buffer_size);
+            if (new_buffer)
+            {
+                buffer = new_buffer;
+            }
+        }
     }
     return buffer;
 }
@@ -83,7 +95,7 @@ int comm_connect_server(const char *hostname, int port)
     int i = 0;
     while (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
     {
-        if (i++ > CON_MAX_ATTEMPTS)
+        if (i++ > COMM_CON_MAX_ATTEMPTS)
         {
         //guess other hostnames for the user
 #ifdef _WIN32
@@ -132,7 +144,7 @@ int comm_start_server(int port)
         return -1;
     }
     //Listen
-    listen(servfd, SERV_BACKLOG);
+    listen(servfd, COMM_SERV_BACKLOG);
     //Accept and incoming connection
     log_inf(_COMM, "Waiting for incoming connections...");
     //accept connection from an incoming client
