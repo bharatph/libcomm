@@ -1,26 +1,22 @@
 cmake_minimum_required(VERSION 3.0)
-project(net_util VERSION 0.5 DESCRIPTION "Cross-platfrom Networking library for C")
-file(GLOB_RECURSE net_util_HDRS "include/*.h")
-file(GLOB_RECURSE net_util_SRCS "src/*.c")
+project(comm VERSION 0.5 DESCRIPTION "Cross-platfrom Networking library for C")
+file(GLOB_RECURSE comm_HDRS "include/*.h")
+file(GLOB_RECURSE comm_SRCS "src/*.c")
 
-add_library(net_util SHARED ${net_util_HDRS} ${net_util_SRCS})
+add_library(comm ${comm_HDRS} ${comm_SRCS})
 if (WIN32)
-    target_link_libraries(net_util wsock32 ws2_32)
+    target_link_libraries(comm wsock32 ws2_32)
 endif ()
-if (ENABLE_CLOG)
-    target_link_libraries(net_util clog)
-endif ()
-set_target_properties(net_util PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(net_util PROPERTIES SOVERSION 1)
-set_target_properties(net_util PROPERTIES PUBLIC_HEADER ${net_util_HDRS})
 
-target_include_directories(net_util PUBLIC include)
-target_include_directories(net_util PUBLIC src)
+set_target_properties(comm PROPERTIES VERSION ${PROJECT_VERSION})
 
-include(GNUInstallDirs)
+target_include_directories(comm PRIVATE include)
 
-install(TARGETS net_util
+target_link_libraries(comm -lclog)
+
+install(FILES ${comm_HDRS} DESTINATION include/comm)
+install(TARGETS comm
         RUNTIME DESTINATION bin
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION bin
         ARCHIVE DESTINATION lib
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+        PUBLIC_HEADER DESTINATION include)
