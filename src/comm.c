@@ -2,7 +2,7 @@
 
 #include <clog/clog.h>
 
-int comm_write_data(SOCKET sockfd, const void *in_buffer)
+int comm_write_text(SOCKET sockfd, const char *in_buffer)
 {
     int blen = strlen(in_buffer);
     char *buffer = (char *)malloc(sizeof(char) * blen);
@@ -17,7 +17,7 @@ int comm_write_data(SOCKET sockfd, const void *in_buffer)
     }
     if (bwrite == -1)
     {
-        printf("write failed");
+        log_err(_COMM, "Write failed");
     }
     else if (bwrite == 0)
     {
@@ -25,21 +25,69 @@ int comm_write_data(SOCKET sockfd, const void *in_buffer)
     return bwrite; //here it indicates error or success
 }
 
-void *comm_read_data(SOCKET sockfd)
+int comm_write_binary(SOCKET sockfd, const void *in_buffer)
+{
+    int blen = strlen(in_buffer);
+    char *buffer = (char *)malloc(blen);
+    strcpy(buffer, in_buffer);
+    ssize_t bwrite = -1;
+    ssize_t write_len = blen;
+    bwrite = send(sockfd, buffer, write_len, 0);
+    while (bwrite > 0)
+    {
+        write_len -= bwrite;
+        bwrite = send(sockfd, buffer, write_len, 0);
+    }
+    if (bwrite == -1)
+    {
+        log_err(_COMM, "Write failed");
+    }
+    else if (bwrite == 0)
+    {
+    }
+    return bwrite; //here it indicates error or success
+}
+
+char *comm_read_text(SOCKET sockfd)
 {
     ssize_t read_bytes = -1;
-    int new_buffer_size = 0;
-    void *buffer = (void *)malloc(sizeof(char) * COMM_BUFFER_SIZE);
+    int buffer_size = COMM_BUFFER_SIZE;
+    char *buffer = (char *)calloc(COMM_BUFFER_SIZE, sizeof(char));
     int i = 0;
-    while ((read_bytes = recv(sockfd, buffer + i, COMM_BUFFER_SIZE, 0)) > 0)
+    while ((read_bytes = recv(sockfd, buffer + i, buffer_size - i, 0)) > 0)
     {
-        if (read_bytes == EOF)
+        if (read_bytes == 0)
             break;
         i += read_bytes;
-        if ((i - COMM_BUFFER_SIZE) >= new_buffer_size)
+        if (i >= buffer_size)
         {
-            new_buffer_size += COMM_BUFFER_SIZE;
-            void *new_buffer = realloc(buffer, new_buffer_size);
+            buffer_size += COMM_BUFFER_SIZE;
+            void *new_buffer = realloc(buffer, buffer_size);
+            if (new_buffer)
+            {
+                buffer = new_buffer;
+            }
+        }
+    }
+    return buffer;
+}
+
+void *comm_read_binary(SOCKET sockfd)
+{
+    ssize_t read_bytes = -1;
+    int buffer_size = COMM_BUFFER_SIZE;
+    void *buffer = (void *)malloc(COMM_BUFFER_SIZE);
+    int i = 0;
+    read_bytes = recv(sockfd, buffer + i, buffer_size - i, 0);
+    while (read_bytes > 0)
+    {
+        if (read_bytes == 0)
+            break;
+        i += read_bytes;
+        if (i >= buffer_size)
+        {
+            buffer_size += COMM_BUFFER_SIZE;
+            void *new_buffer = realloc(buffer, buffer_size);
             if (new_buffer)
             {
                 buffer = new_buffer;

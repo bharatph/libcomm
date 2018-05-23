@@ -22,7 +22,7 @@ typedef int SOCKET;
 #elif _WIN32
 #include <windows.h>
 #include <ws2tcpip.h>
-#include<winsock2.h>
+#include <winsock2.h>
 #else
 #error OS not supported
 #endif
@@ -32,6 +32,16 @@ typedef int SOCKET;
 #define COMM_SERV_BACKLOG 10
 
 /*
+ * Write binary data to a given socket
+ * @param sockfd The socket descriptor to write to
+ * @param buffer The binary to be written to the socket
+ * @return Success value is returned mentioning a value is sent or not
+ * 0 for success
+ * 1 for failure
+ */
+int comm_write_binary(SOCKET sockfd, const void *buffer);
+
+/*
  * Write data to a given socket
  * @param sockfd The socket descriptor to write to
  * @param buffer The message to be written to the socket
@@ -39,16 +49,21 @@ typedef int SOCKET;
  * 0 for success
  * 1 for failure
  */
-
-int comm_write_data(SOCKET sockfd, const void *buffer);
+int comm_write_text(SOCKET sockfd, const char *buffer);
 
 /*
- * Read data from a socket
+ * Read text data from a socket, reads until a newline is encountered
  * @param sockfd The socket descriptor to write to
  * @return buffer data from the socket
  */
+char *comm_read_text(SOCKET sockfd);
 
-void *comm_read_data(SOCKET sockfd);
+/*
+ * Read binary data from a socket, read until socket is closed
+ * @param sockfd The socket descriptor to write to
+ * @return buffer data from the socket
+ */
+void *comm_read_binary(SOCKET sockfd);
 
 /*
  * Disconnects from the server

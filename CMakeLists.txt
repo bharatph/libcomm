@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(comm VERSION 0.5 DESCRIPTION "Cross-platfrom Networking library for C")
+project(comm VERSION 0.7 DESCRIPTION "Cross-platfrom Networking library for C")
 file(GLOB_RECURSE comm_HDRS "include/*.h")
 file(GLOB_RECURSE comm_SRCS "src/*.c")
 
