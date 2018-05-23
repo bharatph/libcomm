@@ -50,40 +50,46 @@ int comm_write_binary(SOCKET sockfd, const void *in_buffer)
 
 char *comm_read_text(SOCKET sockfd)
 {
-    ssize_t read_bytes = -1;
-    int buffer_size = COMM_BUFFER_SIZE;
-    char *buffer = (char *)calloc(COMM_BUFFER_SIZE, sizeof(char));
-    int i = 0;
-    while ((read_bytes = recv(sockfd, buffer + i, buffer_size - i, 0)) > 0)
+    char *buf = (char *)malloc(256);
+    int ptr = 0;
+    memset(buf, '\0', 256);
+    int quit = 0;
+    for (ptr = 0; quit != 1; ptr++)
     {
-        if (read_bytes == 0)
-            break;
-        i += read_bytes;
-        if (i >= buffer_size)
+        int bread = recv(sockfd, buf + ptr, 1, 0);
+        if (bread > 0)
         {
-            buffer_size += COMM_BUFFER_SIZE;
-            void *new_buffer = realloc(buffer, buffer_size);
-            if (new_buffer)
+            // log_inf("SERVER", "Content read[%d]: %c", ptr, buf[ptr]);
+            if (buf[ptr] == '\n' || buf[ptr] == '\r')
             {
-                buffer = new_buffer;
+                buf[ptr] = '\0';
+                return buf;
             }
         }
+        else if (bread == 0)
+        { // EOF hit, client disconnected
+            log_inf("SERVER", "EOF hit");
+            return NULL;
+        }
+        else if (bread < 0)
+        { // read error
+            log_inf("SERVER", "read error exiting...");
+            return NULL;
+        }
     }
-    return buffer;
+    return NULL;
 }
 
 void *comm_read_binary(SOCKET sockfd)
 {
-    ssize_t read_bytes = -1;
+    ssize_t bytes_read = -1;
     int buffer_size = COMM_BUFFER_SIZE;
     void *buffer = (void *)malloc(COMM_BUFFER_SIZE);
     int i = 0;
-    read_bytes = recv(sockfd, buffer + i, buffer_size - i, 0);
-    while (read_bytes > 0)
+    memset(buffer, '\0', COMM_BUFFER_SIZE);
+    while ((bytes_read = recv(sockfd, buffer + i, buffer_size - i, 0)) > 0)
     {
-        if (read_bytes == 0)
-            break;
-        i += read_bytes;
+        i += bytes_read;
         if (i >= buffer_size)
         {
             buffer_size += COMM_BUFFER_SIZE;
