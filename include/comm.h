@@ -32,6 +32,13 @@ typedef int SOCKET;
 #define COMM_SERV_BACKLOG 10
 
 /*
+ * Check if the given port is valid
+ * @param port The port number to be checked
+ * @return 0 is return for success and -1 indicates failure
+ */
+int comm_check_port(int port);
+
+/*
  * Write binary data to a given socket
  * @param sockfd The socket descriptor to write to
  * @param buffer The binary to be written to the socket

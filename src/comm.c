@@ -2,6 +2,16 @@
 
 #include <clog/clog.h>
 
+int comm_check_port(int port)
+{
+    if (port < 0 || port > 65535)
+    {
+        log_err(_COMM, "invalid port number, port number should be between 0 and 65536");
+        return -1;
+    }
+    return 0;
+}
+
 int comm_write_text(SOCKET sockfd, const char *in_buffer)
 {
     int blen = strlen(in_buffer);
@@ -119,14 +129,13 @@ int comm_disconnect_server(SOCKET sockfd)
     return 0;
 }
 
+//checking whether port is between 0 and 65536
 int comm_connect_server(const char *hostname, int port)
 {
     struct sockaddr_in serv_addr;
     struct hostent *server;
-    //checking whether port is between 0 and 65536
-    if (port < 0 || port > 65535)
+    if (comm_check_port(port) != 0)
     {
-        log_err(_COMM, "invalid port number, port number should be between 0 and 65536");
         return -1;
     }
     //Create socket
@@ -171,11 +180,17 @@ int comm_start_server(int port)
     static int servfd;
 
     struct sockaddr_in server, client;
+    socklen_t cli_size;
+
+    if (comm_check_port(port) != 0)
+    {
+        return -1;
+    }
     //Prepare the sockaddr_in structure
     server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
     server.sin_port = htons(port);
-    socklen_t cli_size = sizeof(struct sockaddr_in);
+    cli_size = sizeof(struct sockaddr_in);
 
     if (cont == port)
     {
