@@ -69,7 +69,7 @@ char *comm_read_text(SOCKET sockfd)
         int bread = recv(sockfd, buf + ptr, 1, 0);
         if (bread > 0)
         {
-            // log_inf("SERVER", "Content read[%d]: %c", ptr, buf[ptr]);
+            // log_inf(_COMM, "Content read[%d]: %c", ptr, buf[ptr]);
             if (buf[ptr] == '\n' || buf[ptr] == '\r')
             {
                 buf[ptr] = '\0';
@@ -78,12 +78,12 @@ char *comm_read_text(SOCKET sockfd)
         }
         else if (bread == 0)
         { // EOF hit, client disconnected
-            log_inf("SERVER", "EOF hit");
+            log_inf(_COMM, "EOF hit");
             return NULL;
         }
         else if (bread < 0)
         { // read error
-            log_inf("SERVER", "read error exiting...");
+            log_inf(_COMM, "read error exiting...");
             return NULL;
         }
     }
@@ -194,8 +194,9 @@ int comm_start_server(int port)
 
     if (cont == port)
     {
+        int clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
         log_inf(_COMM, "Connection accepted");
-        return accept(servfd, (struct sockaddr *)&client, &cli_size);
+        return clifd;
     }
     if (cont == 0)
         cont = port;
