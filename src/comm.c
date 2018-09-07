@@ -1,4 +1,4 @@
-#include <libcomm.h>
+#include <comm.h>
 
 #include <clog/clog.h>
 
