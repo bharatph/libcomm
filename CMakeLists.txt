@@ -1,22 +1,24 @@
 cmake_minimum_required(VERSION 3.0)
 project(comm VERSION 0.7 DESCRIPTION "Cross-platfrom Networking library for C")
-file(GLOB_RECURSE comm_HDRS "include/*.h")
-file(GLOB_RECURSE comm_SRCS "src/*.c")
-
-add_library(comm ${comm_HDRS} ${comm_SRCS})
+find_package(clog)
+add_library(comm src/comm.c)
 if (WIN32)
     target_link_libraries(comm wsock32 ws2_32)
 endif ()
 
 set_target_properties(comm PROPERTIES VERSION ${PROJECT_VERSION})
 
-target_include_directories(comm PRIVATE include)
+target_include_directories(comm PUBLIC include)
+target_include_directories(comm PRIVATE ${CLOG_INCLUDE_DIR})
+target_link_libraries(comm ${CLOG_LIBS})
 
-target_link_libraries(comm -lclog)
+add_subdirectory(test)
 
-install(FILES ${comm_HDRS} DESTINATION include/comm)
+install(FILES include/comm.h DESTINATION include)
+install(FILES comm-config.cmake DESTINATION lib/cmake/comm)
 install(TARGETS comm
         RUNTIME DESTINATION lib
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
         PUBLIC_HEADER DESTINATION include)
+enable_testing()

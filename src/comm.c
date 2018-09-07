@@ -1,4 +1,4 @@
-#include <comm.h>
+#include <libcomm.h>
 
 #include <clog/clog.h>
 
@@ -17,7 +17,7 @@ int comm_write_text(SOCKET sockfd, const char *in_buffer)
     int blen = strlen(in_buffer);
     char *buffer = (char *)malloc(sizeof(char) * blen);
     strcpy(buffer, in_buffer);
-    ssize_t bwrite = -1;
+    ssize_t bwrite = 0;
     ssize_t write_len = blen;
     bwrite = send(sockfd, buffer, write_len, 0);
     while (bwrite > 0)
@@ -58,16 +58,51 @@ int comm_write_binary(SOCKET sockfd, const void *in_buffer)
     return bwrite; //here it indicates error or success
 }
 
+char **read_line(const char *in_buffer)
+{
+    char *buffer = (char *)calloc(sizeof(char), sizeof(in_buffer));
+    char **lines = (char **)calloc(sizeof(char *), COMM_BUFFER_SIZE);
+    char *temp = strtok(buffer, "\r\n");
+    int ptr = 0;
+    if (temp == NULL)
+    {
+        return NULL;
+    }
+    while (temp != NULL)
+    {
+        lines[ptr++] = temp;
+        temp = strtok(NULL, "\r\n");
+    }
+    return lines;
+}
+
 char *comm_read_text(SOCKET sockfd)
 {
-    char *buf = (char *)malloc(256);
+    char *buf = (char *)calloc(sizeof(char), COMM_BUFFER_SIZE);
+    int ptr = 0;
+    char *cread = (char *)comm_read_binary(sockfd, buf + ptr, 1);
+    while (cread != NULL)
+    {
+        cread = (char *)comm_read_binary(sockfd, buf + ptr, 1);
+        char *line;
+        if ((line = *read_line(cread)) != NULL)
+        {
+            return line;
+        }
+    }
+}
+
+/*
+char *comm_read_text(SOCKET sockfd)
+{
+    char *buf = (char *)calloc(sizeof(char), COMM_BUFFER_SIZE);
     int ptr = 0;
     memset(buf, '\0', 256);
     int quit = 0;
     for (ptr = 0; quit != 1; ptr++)
     {
-        int bread = recv(sockfd, buf + ptr, 1, 0);
-        if (bread > 0)
+        char *bread = recv(sockfd, buf + ptr, 1, 0);
+        if (bread)
         {
             // log_inf(_COMM, "Content read[%d]: %c", ptr, buf[ptr]);
             if (buf[ptr] == '\n' || buf[ptr] == '\r')
@@ -89,28 +124,26 @@ char *comm_read_text(SOCKET sockfd)
     }
     return NULL;
 }
+*/
 
-void *comm_read_binary(SOCKET sockfd)
+void *comm_read_binary(SOCKET sockfd, void *buffer, int bufflen)
 {
-    ssize_t bytes_read = -1;
-    int buffer_size = COMM_BUFFER_SIZE;
-    void *buffer = (void *)malloc(COMM_BUFFER_SIZE);
-    int i = 0;
-    memset(buffer, '\0', COMM_BUFFER_SIZE);
-    while ((bytes_read = recv(sockfd, buffer + i, buffer_size - i, 0)) > 0)
+    int bytesRead = 0;
+    int result;
+    if (buffer == NULL)
     {
-        i += bytes_read;
-        if (i >= buffer_size)
-        {
-            buffer_size += COMM_BUFFER_SIZE;
-            void *new_buffer = realloc(buffer, buffer_size);
-            if (new_buffer)
-            {
-                buffer = new_buffer;
-            }
-        }
+        buffer = (char *)calloc(1, COMM_BUFFER_SIZE);
     }
-    return buffer;
+    while (bytesRead < bufflen)
+    {
+        result = read(sockfd, buffer + bytesRead, bufflen - bytesRead);
+        if (result < 1)
+        {
+            log_err(_COMM, "Read error");
+        }
+
+        bytesRead += result;
+    }
 }
 
 int comm_disconnect_server(SOCKET sockfd)
@@ -153,6 +186,7 @@ int comm_connect_server(const char *hostname, int port)
     }
     memset((char *)&serv_addr, 0, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
+    //inet_pton(AF_INET, (char *)server->h_addr, &serv_addr);
     memcpy((char *)&serv_addr.sin_addr.s_addr, (char *)server->h_addr, server->h_length);
     serv_addr.sin_port = htons(port);
     int i = 0;
@@ -201,7 +235,7 @@ int comm_start_server(int port)
     if (cont == 0)
         cont = port;
     //Create socket
-    servfd = socket(PF_INET, SOCK_STREAM, 0);
+    servfd = socket(AF_INET, SOCK_STREAM, 0);
     if (servfd == -1)
     {
         log_err(_COMM, "could not create socket");

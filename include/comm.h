@@ -66,11 +66,15 @@ int comm_write_text(SOCKET sockfd, const char *buffer);
 char *comm_read_text(SOCKET sockfd);
 
 /*
- * Read binary data from a socket, read until socket is closed
+ * Read binary data from a socket, read until socket is closed,
+ * if the given buffer points to null the memory will be 
+ * allocated with respect to bufflen
  * @param sockfd The socket descriptor to write to
+ * @param buffer The buffer to store the data
+ * @param The length of the buffer
  * @return buffer data from the socket
  */
-void *comm_read_binary(SOCKET sockfd);
+void *comm_read_binary(SOCKET sockfd, void *buffer, int bufflen);
 
 /*
  * Disconnects from the server
