@@ -1,11 +1,15 @@
 #include <stdio.h>
-#include <clog/clog.h>
+//#include<clog/clog.h>
 #include <comm.h>
+#ifdef _WIN32
+#include <Windows.h>
+#else
 #include <unistd.h>
+#endif
 
 static const char *TAG = "TEST";
 
-int sockfd = -1;
+SOCKET sockfd = -1;
 
 int test_connection(){
     sockfd = comm_start_server(3500);
@@ -18,14 +22,15 @@ int test_write(){
     if( send(sockfd, "testing", 7, 0) < 0){
         return -1;
     }
+	return -1;
 }
 
 int test_read(){
-    int buf_len = 10;
-    char buffer[buf_len];
-    recv(sockfd, buffer, buf_len, 0);
-    buffer[buf_len - 1] = '\0';
-    log_inf(TAG, buffer);
+#define _L_BUF_LEN 10
+	char buffer[_L_BUF_LEN];
+    recv(sockfd, buffer, _L_BUF_LEN, 0);
+    buffer[_L_BUF_LEN - 1] = '\0';
+    //log_inf(TAG, buffer);
     return 0;
 }
 
@@ -42,6 +47,6 @@ int main(int argc, char *argv[]){
     } else if(strcmp(argv[3], "read")){
         status = test_read();
     }
-    close(sockfd);
+	comm_close_socket(sockfd);
     return status;
 }

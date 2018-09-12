@@ -20,9 +20,14 @@ extern "C" {
 #include <netdb.h>
 typedef int SOCKET;
 #elif _WIN32
-#include <windows.h>
-#include <ws2tcpip.h>
+//#include <windows.h>
+//#include <ws2tcpip.h>
 #include <winsock2.h>
+#include <Windows.h>
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+	typedef short ssize_t;
+	typedef int socklen_t;
 #else
 #error OS not supported
 #endif
@@ -77,24 +82,24 @@ char *comm_read_text(SOCKET sockfd);
 void *comm_read_binary(SOCKET sockfd, void *buffer, int bufflen);
 
 /*
- * Disconnects from the server
+ * closes the socket if it open
  * @param sockfd The socket to be closed
  */
-int comm_disconnect_server(SOCKET sockfd);
+int comm_close_socket(SOCKET sockfd);
 
 /** Connects to the server with the standard IPv4 and TCP stack
  * @param hostname IPv4 address or hostname
  * @param port Port number for the server to start
  * @return Socket descriptor of the started server
  */
-int comm_connect_server(const char *hostname, int port);
+SOCKET comm_connect_server(const char *hostname, int port);
 
 //TODO support multiple server options
 /** Starts the server with the standard IPv4 and TCP stack
  * @param port Port number for the server to start
  * @return Socket descriptor of the started server
  */
-int comm_start_server(int port);
+SOCKET comm_start_server(int port);
 
 #ifdef __cplusplus
 }

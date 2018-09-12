@@ -9,7 +9,7 @@ endif ()
 set_target_properties(comm PROPERTIES VERSION ${PROJECT_VERSION})
 
 target_include_directories(comm PUBLIC include)
-target_include_directories(comm PRIVATE ${CLOG_INCLUDE_DIR})
+target_include_directories(comm PUBLIC ${CLOG_INCLUDE_DIR})
 target_link_libraries(comm ${CLOG_LIBS})
 
 add_subdirectory(test)

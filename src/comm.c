@@ -1,6 +1,6 @@
 #include <comm.h>
 
-#include <clog/clog.h>
+#include <clog.h>
 
 int comm_check_port(int port)
 {
@@ -14,11 +14,11 @@ int comm_check_port(int port)
 
 int comm_write_text(SOCKET sockfd, const char *in_buffer)
 {
-    int blen = strlen(in_buffer);
+    size_t blen = strlen(in_buffer);
     char *buffer = (char *)malloc(sizeof(char) * blen);
     strcpy(buffer, in_buffer);
     ssize_t bwrite = 0;
-    ssize_t write_len = blen;
+    size_t write_len = blen;
     bwrite = send(sockfd, buffer, write_len, 0);
     while (bwrite > 0)
     {
@@ -37,7 +37,7 @@ int comm_write_text(SOCKET sockfd, const char *in_buffer)
 
 int comm_write_binary(SOCKET sockfd, const void *in_buffer)
 {
-    int blen = strlen(in_buffer);
+    size_t blen = strlen(in_buffer);
     char *buffer = (char *)malloc(blen);
     strcpy(buffer, in_buffer);
     ssize_t bwrite = -1;
@@ -90,6 +90,7 @@ char *comm_read_text(SOCKET sockfd)
             return line;
         }
     }
+	return NULL;
 }
 
 /*
@@ -126,7 +127,7 @@ char *comm_read_text(SOCKET sockfd)
 }
 */
 
-void *comm_read_binary(SOCKET sockfd, void *buffer, int bufflen)
+void *comm_read_binary(SOCKET sockfd, char *buffer, int bufflen)
 {
     int bytesRead = 0;
     int result;
@@ -136,7 +137,7 @@ void *comm_read_binary(SOCKET sockfd, void *buffer, int bufflen)
     }
     while (bytesRead < bufflen)
     {
-        result = read(sockfd, buffer + bytesRead, bufflen - bytesRead);
+        result = recv(sockfd, buffer + bytesRead, bufflen - bytesRead, 0);
         if (result < 1)
         {
             log_err(_COMM, "Read error");
@@ -144,9 +145,10 @@ void *comm_read_binary(SOCKET sockfd, void *buffer, int bufflen)
 
         bytesRead += result;
     }
+	return NULL;
 }
 
-int comm_disconnect_server(SOCKET sockfd)
+int comm_close_socket(SOCKET sockfd)
 {
 #if defined(_WIN32)
     if (closesocket(sockfd) == -1)
@@ -163,7 +165,7 @@ int comm_disconnect_server(SOCKET sockfd)
 }
 
 //checking whether port is between 0 and 65536
-int comm_connect_server(const char *hostname, int port)
+SOCKET comm_connect_server(const char *hostname, int port)
 {
     struct sockaddr_in serv_addr;
     struct hostent *server;
@@ -172,7 +174,7 @@ int comm_connect_server(const char *hostname, int port)
         return -1;
     }
     //Create socket
-    int sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    SOCKET sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1)
     {
         log_err(_COMM, "Could not create socket");
@@ -208,10 +210,10 @@ int comm_connect_server(const char *hostname, int port)
     return sockfd;
 }
 
-int comm_start_server(int port)
+SOCKET comm_start_server(int port)
 {
     static int cont;
-    static int servfd;
+    static SOCKET servfd;
 
     struct sockaddr_in server, client;
     socklen_t cli_size;
@@ -228,7 +230,7 @@ int comm_start_server(int port)
 
     if (cont == port)
     {
-        int clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
+        SOCKET clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
         log_inf(_COMM, "Connection accepted");
         return clifd;
     }
@@ -252,7 +254,7 @@ int comm_start_server(int port)
     //Accept and incoming connection
     log_inf(_COMM, "Waiting for incoming connections...");
     //accept connection from an incoming client
-    int clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
+    SOCKET clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
     if (clifd < 0)
     {
         log_inf(_COMM, "Accept failed");
