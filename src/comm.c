@@ -127,7 +127,7 @@ char *comm_read_text(SOCKET sockfd)
 }
 */
 
-void *comm_read_binary(SOCKET sockfd, char *buffer, int bufflen)
+void *comm_read_binary(SOCKET sockfd, void *buffer, int bufflen)
 {
     int bytesRead = 0;
     int result;
