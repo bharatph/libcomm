@@ -18,7 +18,7 @@ extern "C" {
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-typedef int SOCKET;
+typedef int comm_socket;
 #elif _WIN32
 //#include <windows.h>
 //#include <ws2tcpip.h>
@@ -28,6 +28,7 @@ typedef int SOCKET;
 #define _CRT_SECURE_NO_WARNINGS
 	typedef short ssize_t;
 	typedef int socklen_t;
+	typedef SOCKET comm_socket;
 #else
 #error OS not supported
 #endif
@@ -51,7 +52,7 @@ int comm_check_port(int port);
  * 0 for success
  * 1 for failure
  */
-int comm_write_binary(SOCKET sockfd, const void *buffer);
+int comm_write_binary(comm_socket sockfd, const void *buffer);
 
 /*
  * Write data to a given socket
@@ -61,45 +62,45 @@ int comm_write_binary(SOCKET sockfd, const void *buffer);
  * 0 for success
  * 1 for failure
  */
-int comm_write_text(SOCKET sockfd, const char *buffer);
+int comm_write_text(comm_socket sockfd, const char *buffer);
 
 /*
  * Read text data from a socket, reads until a newline is encountered
  * @param sockfd The socket descriptor to write to
  * @return buffer data from the socket
  */
-char *comm_read_text(SOCKET sockfd);
+char *comm_read_text(comm_socket sockfd);
 
 /*
  * Read binary data from a socket, read until socket is closed,
- * if the given buffer points to null the memory will be 
+ * if the given buffer points to null the memory will be
  * allocated with respect to bufflen
  * @param sockfd The socket descriptor to write to
  * @param buffer The buffer to store the data
  * @param The length of the buffer
  * @return buffer data from the socket
  */
-void *comm_read_binary(SOCKET sockfd, void *buffer, int bufflen);
+void *comm_read_binary(comm_socket sockfd, void *buffer, int bufflen);
 
 /*
  * closes the socket if it open
  * @param sockfd The socket to be closed
  */
-int comm_close_socket(SOCKET sockfd);
+int comm_close_socket(comm_socket sockfd);
 
 /** Connects to the server with the standard IPv4 and TCP stack
  * @param hostname IPv4 address or hostname
  * @param port Port number for the server to start
  * @return Socket descriptor of the started server
  */
-SOCKET comm_connect_server(const char *hostname, int port);
+comm_socket comm_connect_server(const char *hostname, int port);
 
 //TODO support multiple server options
 /** Starts the server with the standard IPv4 and TCP stack
  * @param port Port number for the server to start
  * @return Socket descriptor of the started server
  */
-SOCKET comm_start_server(int port);
+comm_socket comm_start_server(int port);
 
 #ifdef __cplusplus
 }

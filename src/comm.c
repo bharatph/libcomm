@@ -12,7 +12,7 @@ int comm_check_port(int port)
     return 0;
 }
 
-int comm_write_text(SOCKET sockfd, const char *in_buffer)
+int comm_write_text(comm_socket sockfd, const char *in_buffer)
 {
     size_t blen = strlen(in_buffer);
     char *buffer = (char *)malloc(sizeof(char) * blen);
@@ -35,7 +35,7 @@ int comm_write_text(SOCKET sockfd, const char *in_buffer)
     return bwrite; //here it indicates error or success
 }
 
-int comm_write_binary(SOCKET sockfd, const void *in_buffer)
+int comm_write_binary(comm_socket sockfd, const void *in_buffer)
 {
     size_t blen = strlen(in_buffer);
     char *buffer = (char *)malloc(blen);
@@ -76,25 +76,18 @@ char **read_line(const char *in_buffer)
     return lines;
 }
 
-char *comm_read_text(SOCKET sockfd)
+char *comm_read_text(comm_socket sockfd)
 {
     char *buf = (char *)calloc(sizeof(char), COMM_BUFFER_SIZE);
-    int ptr = 0;
-    char *cread = (char *)comm_read_binary(sockfd, buf + ptr, 1);
-    while (cread != NULL)
-    {
-        cread = (char *)comm_read_binary(sockfd, buf + ptr, 1);
-        char *line;
-        if ((line = *read_line(cread)) != NULL)
-        {
-            return line;
-        }
-    }
-	return NULL;
+    char *cread = (char *)comm_read_binary(sockfd, buf, COMM_BUFFER_SIZE);
+    if(cread == NULL)return NULL;
+    char **lines = read_line(cread);
+    if(lines == NULL)return NULL;
+    return *lines;
 }
 
 /*
-char *comm_read_text(SOCKET sockfd)
+char *comm_read_text(comm_socket sockfd)
 {
     char *buf = (char *)calloc(sizeof(char), COMM_BUFFER_SIZE);
     int ptr = 0;
@@ -127,7 +120,7 @@ char *comm_read_text(SOCKET sockfd)
 }
 */
 
-void *comm_read_binary(SOCKET sockfd, void *buffer, int bufflen)
+void *comm_read_binary(comm_socket sockfd, void *buffer, int bufflen)
 {
     int bytesRead = 0;
     int result;
@@ -148,7 +141,7 @@ void *comm_read_binary(SOCKET sockfd, void *buffer, int bufflen)
 	return NULL;
 }
 
-int comm_close_socket(SOCKET sockfd)
+int comm_close_socket(comm_socket sockfd)
 {
 #if defined(_WIN32)
     if (closesocket(sockfd) == -1)
@@ -165,7 +158,7 @@ int comm_close_socket(SOCKET sockfd)
 }
 
 //checking whether port is between 0 and 65536
-SOCKET comm_connect_server(const char *hostname, int port)
+comm_socket comm_connect_server(const char *hostname, int port)
 {
     struct sockaddr_in serv_addr;
     struct hostent *server;
@@ -174,7 +167,7 @@ SOCKET comm_connect_server(const char *hostname, int port)
         return -1;
     }
     //Create socket
-    SOCKET sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    comm_socket sockfd = socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == -1)
     {
         log_err(_COMM, "Could not create socket");
@@ -210,10 +203,10 @@ SOCKET comm_connect_server(const char *hostname, int port)
     return sockfd;
 }
 
-SOCKET comm_start_server(int port)
+comm_socket comm_start_server(int port)
 {
     static int cont;
-    static SOCKET servfd;
+    static comm_socket servfd;
 
     struct sockaddr_in server, client;
     socklen_t cli_size;
@@ -230,7 +223,7 @@ SOCKET comm_start_server(int port)
 
     if (cont == port)
     {
-        SOCKET clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
+        comm_socket clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
         log_inf(_COMM, "Connection accepted");
         return clifd;
     }
@@ -254,7 +247,7 @@ SOCKET comm_start_server(int port)
     //Accept and incoming connection
     log_inf(_COMM, "Waiting for incoming connections...");
     //accept connection from an incoming client
-    SOCKET clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
+    comm_socket clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
     if (clifd < 0)
     {
         log_inf(_COMM, "Accept failed");
