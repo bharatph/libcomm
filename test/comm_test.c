@@ -32,7 +32,7 @@ int test_read(){
     char *buffer;
     buffer = comm_read_text(sock);
     if(buffer == NULL)return -1;
-    printf("Mesage: %s\n", buffer);
+    printf("Mesage: %s", buffer);
     return 0;
 }
 

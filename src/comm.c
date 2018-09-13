@@ -79,11 +79,9 @@ char **read_line(const char *in_buffer)
 char *comm_read_text(comm_socket sockfd)
 {
     char *buf = (char *)calloc(sizeof(char), COMM_BUFFER_SIZE);
-    char *cread = (char *)comm_read_binary(sockfd, buf, COMM_BUFFER_SIZE);
-    if(cread == NULL)return NULL;
-    char **lines = read_line(cread);
-    if(lines == NULL)return NULL;
-    return *lines;
+    comm_read_binary(sockfd, buf, COMM_BUFFER_SIZE);
+    if(buf == NULL)return NULL;
+    return buf;
 }
 
 /*
@@ -120,25 +118,23 @@ char *comm_read_text(comm_socket sockfd)
 }
 */
 
-void *comm_read_binary(comm_socket sockfd, void *buffer, int bufflen)
+int comm_read_binary(comm_socket sockfd, char *buffer, int bufflen)
 {
-    int bytesRead = 0;
-    int result;
-    if (buffer == NULL)
-    {
-        buffer = (char *)calloc(1, COMM_BUFFER_SIZE);
-    }
-    while (bytesRead < bufflen)
-    {
-        result = recv(sockfd, buffer + bytesRead, bufflen - bytesRead, 0);
-        if (result < 1)
-        {
-            log_err(_COMM, "Read error");
-        }
-
-        bytesRead += result;
-    }
-	return NULL;
+  int bytesRead = 0;
+  int result;
+  if (buffer == NULL)
+  {
+      buffer = (char *)calloc(1, COMM_BUFFER_SIZE);
+  }
+  if(bufflen == 0)return 0;
+  result = recv(sockfd, buffer + bytesRead, bufflen - bytesRead, 0);
+  if (result < 1)
+  {
+    log_err(_COMM, "Read error");
+    return -1;
+  }
+  bytesRead += result;
+	return 0;
 }
 
 int comm_close_socket(comm_socket sockfd)
@@ -185,6 +181,11 @@ comm_socket comm_connect_server(const char *hostname, int port)
     memcpy((char *)&serv_addr.sin_addr.s_addr, (char *)server->h_addr, server->h_length);
     serv_addr.sin_port = htons(port);
     int i = 0;
+    int option = 1;
+     if(setsockopt(sockfd,SOL_SOCKET,(SO_REUSEPORT | SO_REUSEADDR),(char*)&option,sizeof(option)) < 0){
+       log_err(_COMM, "cannot set options to socket");
+       return -1;
+     }
     while (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
     {
         if (i++ > COMM_CON_MAX_ATTEMPTS)

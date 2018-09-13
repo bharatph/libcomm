@@ -80,7 +80,7 @@ char *comm_read_text(comm_socket sockfd);
  * @param The length of the buffer
  * @return buffer data from the socket
  */
-void *comm_read_binary(comm_socket sockfd, void *buffer, int bufflen);
+int comm_read_binary(comm_socket sockfd, char *buffer, int bufflen);
 
 /*
  * closes the socket if it open
