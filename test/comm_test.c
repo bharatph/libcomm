@@ -1,5 +1,4 @@
 #include <stdio.h>
-//#include<clog/clog.h>
 #include <comm.h>
 #ifdef _WIN32
 #include <Windows.h>
@@ -27,13 +26,32 @@ int test_write(){
 }
 
 int test_read(){
-#define _L_BUF_LEN 10
     if(test_connection() < 0)return -1;
-    char *buffer;
-    buffer = comm_read_text(sock);
+    char buffer[8];
+    if(comm_read_text(sock, buffer, 7) < 0){
+      printf("Test: Read Error\n");
+    }
     if(buffer == NULL)return -1;
-    printf("Mesage: %s", buffer);
+    printf("%s\n", buffer);
     return 0;
+}
+
+int test_read_lines(){
+  if(test_connection() < 0)return -1;
+  char buffer[100];
+  if(comm_read_text(sock, buffer, 10) < 0){
+    printf("Test: Read error");
+  }
+  if(buffer == NULL)return -1;
+  int *line_len = (int *)calloc(sizeof(int), 1);
+  char **lines = read_line(line_len, buffer);
+  if(*line_len == 0){
+    return -1;
+  }
+  int i = 0;
+  for(i = 0; i < *line_len; i++){
+    printf("Message[%d]: %s\n", i, lines[i]);
+  }
 }
 
 
@@ -48,6 +66,11 @@ int main(int argc, char *argv[]){
         status = test_write();
     } else if(strcmp(argv[1], "read") == 0){
         status = test_read();
+    } else if(strcmp(argv[1], "read_lines") == 0){
+      status = test_read_lines();
+    } else {
+      printf("Unknown parameter\n");
+      return -1;
     }
 	comm_close_socket(sock);
     return status;

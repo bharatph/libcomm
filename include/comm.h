@@ -69,7 +69,7 @@ int comm_write_text(comm_socket sockfd, const char *buffer);
  * @param sockfd The socket descriptor to write to
  * @return buffer data from the socket
  */
-char *comm_read_text(comm_socket sockfd);
+int comm_read_text(comm_socket sockfd, char *buffer, int buf_len);
 
 /*
  * Read binary data from a socket, read until socket is closed,
@@ -101,6 +101,8 @@ comm_socket comm_connect_server(const char *hostname, int port);
  * @return Socket descriptor of the started server
  */
 comm_socket comm_start_server(int port);
+
+char **read_line(int *line_no, const char *in_buffer);
 
 #ifdef __cplusplus
 }

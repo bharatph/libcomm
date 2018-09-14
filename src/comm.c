@@ -58,30 +58,39 @@ int comm_write_binary(comm_socket sockfd, const void *in_buffer)
     return bwrite; //here it indicates error or success
 }
 
-char **read_line(const char *in_buffer)
+char **read_line(int *line_no, const char *in_buffer)
 {
     char *buffer = (char *)calloc(sizeof(char), sizeof(in_buffer));
-    char **lines = (char **)calloc(sizeof(char *), COMM_BUFFER_SIZE);
-    char *temp = strtok(buffer, "\r\n");
+    strcpy(buffer, in_buffer);
+    char **lines = (char **)calloc(sizeof(char *), 10);
+    char *temp = strtok(buffer, "\n");
     int ptr = 0;
     if (temp == NULL)
     {
-        return NULL;
+      printf("Null");
+      *line_no = 1;
+      lines[0] = (char *)calloc(sizeof(char), sizeof(in_buffer));
+      strcpy(lines[0], in_buffer);
+      return lines;
     }
     while (temp != NULL)
     {
         lines[ptr++] = temp;
-        temp = strtok(NULL, "\r\n");
+        temp = strtok(NULL, "\n");
     }
+    *line_no = ptr;
     return lines;
 }
 
-char *comm_read_text(comm_socket sockfd)
-{
-    char *buf = (char *)calloc(sizeof(char), COMM_BUFFER_SIZE);
-    comm_read_binary(sockfd, buf, COMM_BUFFER_SIZE);
-    if(buf == NULL)return NULL;
-    return buf;
+int comm_read_text(comm_socket sockfd, char *buf, int buf_len){
+    if(buf == NULL){
+      return -1;
+    }
+    if(comm_read_binary(sockfd, buf, buf_len) < 0){
+      return -1;
+    }
+    buf[buf_len] = '\0';
+    return 0;
 }
 
 /*
@@ -118,22 +127,29 @@ char *comm_read_text(comm_socket sockfd)
 }
 */
 
-int comm_read_binary(comm_socket sockfd, char *buffer, int bufflen)
+int comm_read_binary(comm_socket sock, char *buffer, int bufflen)
 {
+  if(bufflen == 0)return 0;
   int bytesRead = 0;
-  int result;
   if (buffer == NULL)
   {
       buffer = (char *)calloc(1, COMM_BUFFER_SIZE);
   }
-  if(bufflen == 0)return 0;
-  result = recv(sockfd, buffer + bytesRead, bufflen - bytesRead, 0);
-  if (result < 1)
+  bytesRead = recv(sock, buffer + bytesRead, bufflen - bytesRead, 0);
+  if (bytesRead < 0)
   {
-    log_err(_COMM, "Read error");
+    log_per(_COMM, "Read error");
     return -1;
   }
-  bytesRead += result;
+  if(bytesRead == 0){
+    //EOF HIT, client disconnected
+    log_inf(_COMM, "EOF HIT");
+    return -1;
+  }
+  if(bytesRead < bufflen){
+    //poll for data, if data exist rerun subroutine
+    comm_read_binary(sock, buffer + bytesRead, bufflen - bytesRead);
+  }
 	return 0;
 }
 
@@ -145,7 +161,7 @@ int comm_close_socket(comm_socket sockfd)
     if (close(sockfd) == -1)
 #endif
     {
-        log_err(_COMM, "Disconnection Unsuccesful");
+        log_err(_COMM, "Disconnection error");
         return -1;
     }
     else
@@ -181,11 +197,12 @@ comm_socket comm_connect_server(const char *hostname, int port)
     memcpy((char *)&serv_addr.sin_addr.s_addr, (char *)server->h_addr, server->h_length);
     serv_addr.sin_port = htons(port);
     int i = 0;
+    //set sock for reuses
     int option = 1;
-     if(setsockopt(sockfd,SOL_SOCKET,(SO_REUSEPORT | SO_REUSEADDR),(char*)&option,sizeof(option)) < 0){
-       log_err(_COMM, "cannot set options to socket");
-       return -1;
-     }
+    if(setsockopt(sockfd,SOL_SOCKET,(SO_REUSEPORT | SO_REUSEADDR),(char*)&option,sizeof(option)) < 0){
+        log_err(_COMM, "cannot set options to socket");
+        return -1;
+    }
     while (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
     {
         if (i++ > COMM_CON_MAX_ATTEMPTS)
