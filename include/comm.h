@@ -18,7 +18,7 @@ extern "C" {
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-typedef int comm_socket;
+typedef int SOCKET;
 #elif _WIN32
 //#include <windows.h>
 //#include <ws2tcpip.h>
@@ -28,14 +28,16 @@ typedef int comm_socket;
 #define _CRT_SECURE_NO_WARNINGS
 	typedef short ssize_t;
 	typedef int socklen_t;
-	typedef SOCKET comm_socket;
 #else
+	typedef int SOCKET;
 #error OS not supported
 #endif
 
 #define COMM_BUFFER_SIZE 256
 #define COMM_CON_MAX_ATTEMPTS 5
 #define COMM_SERV_BACKLOG 10
+
+typedef SOCKET comm_socket;
 
 /*
  * Check if the given port is valid
