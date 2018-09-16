@@ -60,6 +60,19 @@ int comm_write_binary(comm_socket sockfd, const void *in_buffer)
 
 char **read_line(int *line_no, const char *in_buffer)
 {
+  *line_no = 0;
+  if(in_buffer == NULL){
+    return NULL;
+  }
+  if(in_buffer[0] == '\0'){
+    return NULL;
+  }
+  if(in_buffer[0] == '\n'){
+    return NULL;
+  }
+  if(in_buffer[0] == '\r' && in_buffer[1] == '\n'){
+    return NULL;
+  }
     char *buffer = (char *)calloc(sizeof(char), sizeof(in_buffer));
     strcpy(buffer, in_buffer);
     char **lines = (char **)calloc(sizeof(char *), 10);
@@ -67,7 +80,6 @@ char **read_line(int *line_no, const char *in_buffer)
     int ptr = 0;
     if (temp == NULL)
     {
-      printf("Null");
       *line_no = 1;
       lines[0] = (char *)calloc(sizeof(char), sizeof(in_buffer));
       strcpy(lines[0], in_buffer);

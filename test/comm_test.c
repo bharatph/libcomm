@@ -5,28 +5,48 @@
 #else
 #include <unistd.h>
 #endif
+#include <pthread.h>
+
+#define _D_PORT 3500
 
 static const char *TAG = "TEST";
 
 comm_socket sock = -1;
 
-int test_connection(){
-    sock = comm_start_server(3500);
+
+int test_server(int port){
+    sock = comm_start_server(port);
     if(sock < 0){
         return -1;
     } else return 0;
 }
 
+void *start_server(void *port){
+  //test_server((*(int *)port));
+}
+
+int test_connection(){
+      //pthread_t thread_id;
+      //int port = 7500;
+    //pthread_create(&thread_id, NULL, start_server, (void *)&port);
+  sock = comm_connect_server("localhost", _D_PORT);
+  if(sock < 0){
+    return -1;
+  }
+      //pthread_join(thread_id, NULL);
+  return 0;
+}
+
 int test_write(){
     if(test_connection() < 0)return -1;
-    if( comm_write_text(sock, "testing") < 0){
+    if( comm_write_text(sock, "hello") < 0){
         return -1;
     }
 	return 0;
 }
 
 int test_read(){
-    if(test_connection() < 0)return -1;
+    if(test_server(_D_PORT) < 0)return -1;
     char buffer[8];
     if(comm_read_text(sock, buffer, 7) < 0){
       printf("Test: Read Error\n");
@@ -37,7 +57,7 @@ int test_read(){
 }
 
 int test_read_lines(){
-  if(test_connection() < 0)return -1;
+  if(test_server(_D_PORT) < 0)return -1;
   char buffer[100];
   if(comm_read_text(sock, buffer, 10) < 0){
     printf("Test: Read error");
@@ -54,13 +74,14 @@ int test_read_lines(){
   }
 }
 
-
 int main(int argc, char *argv[]){
     int status = -1;
     if(argc < 2){
         return -1;
     }
-    if(strcmp(argv[1], "connection") == 0){
+    if(strcmp(argv[1], "server") == 0){
+        status = test_server(_D_PORT);
+    } else if(strcmp(argv[1], "connection") == 0){
         status = test_connection();
     } else if(strcmp(argv[1], "write") == 0){
         status = test_write();
