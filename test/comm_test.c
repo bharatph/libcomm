@@ -4,9 +4,8 @@
 #include <Windows.h>
 #else
 #include <unistd.h>
-#endif
 #include <pthread.h>
-
+#endif
 #define _D_PORT 3500
 
 static const char *TAG = "TEST";

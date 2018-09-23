@@ -211,10 +211,12 @@ comm_socket comm_connect_server(const char *hostname, int port)
     int i = 0;
     //set sock for reuses
     int option = 1;
+#ifndef _WIN32
     if(setsockopt(sockfd,SOL_SOCKET,(SO_REUSEPORT | SO_REUSEADDR),(char*)&option,sizeof(option)) < 0){
         log_err(_COMM, "cannot set options to socket");
         return -1;
     }
+#endif
     while (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
     {
         if (i++ > COMM_CON_MAX_ATTEMPTS)
@@ -235,13 +237,13 @@ comm_socket comm_connect_server(const char *hostname, int port)
 
 comm_socket comm_start_server(int port)
 {
-    static int cont;
+	static int cont;
     static comm_socket servfd;
 
     struct sockaddr_in server, client;
     socklen_t cli_size;
 
-    if (comm_check_port(port) != 0)
+    if (comm_check_port(port) < 0)
     {
         return -1;
     }
@@ -254,6 +256,11 @@ comm_socket comm_start_server(int port)
     if (cont == port)
     {
         comm_socket clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
+		if (clifd < 0)
+		{
+			log_inf(_COMM, "Accept failed");
+			return -1;
+		}
         log_inf(_COMM, "Connection accepted");
         return clifd;
     }
