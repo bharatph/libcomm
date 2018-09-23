@@ -1,6 +1,42 @@
 #include <comm.h>
 
+#ifdef _WIN32
+#include <windef.h>
+#endif
+
 #include <clog.h>
+
+int comm_init() {
+#ifdef _WIN32
+	WORD wVersionRequested;
+	WSADATA wsaData;
+	int err;
+
+	wVersionRequested = MAKEWORD(2, 2);
+
+	err = WSAStartup(wVersionRequested, &wsaData);
+	if (err != 0) {
+		log_fat(_COMM, "WSAStartup failed with error: %d\n", err);
+		return 1;
+	}
+
+	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
+		log_fat(_COMM, "Could not find Winsock.dll with version 2.2, please install one");
+		comm_clean();
+		return -1;
+	}
+#endif
+	return 0;
+}
+
+int comm_clean()
+{
+#ifdef _WIN32
+	WSACleanup();
+#endif
+	return 0;
+}
+
 
 int comm_check_port(int port)
 {
@@ -192,7 +228,7 @@ comm_socket comm_connect_server(const char *hostname, int port)
     }
     //Create socket
     comm_socket sockfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == -1)
+    if (sockfd == SOCKET_ERROR)
     {
         log_err(_COMM, "Could not create socket");
         return -1;
@@ -256,7 +292,7 @@ comm_socket comm_start_server(int port)
     if (cont == port)
     {
         comm_socket clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
-		if (clifd < 0)
+		if (clifd == SOCKET_ERROR)
 		{
 			log_inf(_COMM, "Accept failed");
 			return -1;
@@ -268,7 +304,7 @@ comm_socket comm_start_server(int port)
         cont = port;
     //Create socket
     servfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (servfd == -1)
+    if (servfd == SOCKET_ERROR)
     {
         log_err(_COMM, "could not create socket");
         return -1;
@@ -285,7 +321,7 @@ comm_socket comm_start_server(int port)
     log_inf(_COMM, "Waiting for incoming connections...");
     //accept connection from an incoming client
     comm_socket clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
-    if (clifd < 0)
+    if (clifd == SOCKET_ERROR)
     {
         log_inf(_COMM, "Accept failed");
         return -1;

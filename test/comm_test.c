@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #endif
+
 #define _D_PORT 3500
 
 static const char *TAG = "TEST";
@@ -15,9 +16,22 @@ comm_socket sock = -1;
 
 int test_server(int port){
     sock = comm_start_server(port);
-    if(sock < 0){
+    if(sock == SOCKET_ERROR){
+		comm_close_socket(sock);
         return -1;
     } else return 0;
+}
+
+int test_server_loop(int port) {
+	int loop = 3;
+	while (loop --> 0) {
+		sock = comm_start_server(port);
+		if (sock == SOCKET_ERROR) {
+			comm_close_socket(sock);
+			return -1;
+		}
+	}
+	return 0;
 }
 
 void *start_server(void *port){
@@ -75,12 +89,17 @@ int test_read_lines(){
 
 int main(int argc, char *argv[]){
     int status = -1;
+	/*
     if(argc < 2){
         return -1;
     }
+	*/
+	comm_init();
     if(strcmp(argv[1], "server") == 0){
         status = test_server(_D_PORT);
-    } else if(strcmp(argv[1], "connection") == 0){
+	} else if (strcmp(argv[1], "server_loop") == 0) {
+		status = test_server_loop(_D_PORT);
+	} else if(strcmp(argv[1], "connection") == 0){
         status = test_connection();
     } else if(strcmp(argv[1], "write") == 0){
         status = test_write();
@@ -93,5 +112,6 @@ int main(int argc, char *argv[]){
       return -1;
     }
 	comm_close_socket(sock);
+	comm_clean();
     return status;
 }

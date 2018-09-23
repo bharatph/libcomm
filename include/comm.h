@@ -38,6 +38,15 @@ typedef int SOCKET;
 #define COMM_SERV_BACKLOG 10
 
 typedef SOCKET comm_socket;
+/*
+ * Loads operating system specific libraries
+ */
+int comm_init();
+
+/*
+ * Frees up memory
+ */
+int comm_clean();
 
 /*
  * Check if the given port is valid
