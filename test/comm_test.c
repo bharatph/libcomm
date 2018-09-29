@@ -89,12 +89,11 @@ int test_read_lines(){
 
 int main(int argc, char *argv[]){
     int status = -1;
-	/*
     if(argc < 2){
         return -1;
     }
-	*/
 	comm_init();
+	test_server(_D_PORT);
     if(strcmp(argv[1], "server") == 0){
         status = test_server(_D_PORT);
 	} else if (strcmp(argv[1], "server_loop") == 0) {

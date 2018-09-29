@@ -106,13 +106,13 @@ char **read_line(int *line_no, const char *in_buffer)
   if(in_buffer[0] == '\n'){
     return NULL;
   }
-  if(in_buffer[0] == '\r' && in_buffer[1] == '\n'){
-    return NULL;
+  if (strcmp(in_buffer, "\r\n") == 0) {
+	  return NULL;
   }
     char *buffer = (char *)calloc(sizeof(char), sizeof(in_buffer));
     strcpy(buffer, in_buffer);
     char **lines = (char **)calloc(sizeof(char *), 10);
-    char *temp = strtok(buffer, "\n");
+    char *temp = strtok(buffer, "\r\n");
     int ptr = 0;
     if (temp == NULL)
     {
@@ -124,7 +124,7 @@ char **read_line(int *line_no, const char *in_buffer)
     while (temp != NULL)
     {
         lines[ptr++] = temp;
-        temp = strtok(NULL, "\n");
+        temp = strtok(NULL, "\r\n");
     }
     *line_no = ptr;
     return lines;
