@@ -19,6 +19,7 @@ extern "C" {
 #include <arpa/inet.h>
 #include <netdb.h>
 typedef int SOCKET;
+#define SOCKET_ERROR -1
 #elif _WIN32
 //#include <windows.h>
 //#include <ws2tcpip.h>
@@ -76,11 +77,14 @@ int comm_write_binary(comm_socket sockfd, const void *buffer);
 int comm_write_text(comm_socket sockfd, const char *buffer);
 
 /*
- * Read text data from a socket, reads until a newline is encountered
+ * Read text data from a socket, reads a write or until max_len is
+ * achieved. Strips the ending characters: \r, \n, \r\n.
+ * The returned text might be less than max_len
  * @param sockfd The socket descriptor to write to
- * @return buffer data from the socket
+ * @return buffer data from the socket. NULL indicates 
+ * connection has been closed or error has been occured
  */
-int comm_read_text(comm_socket sockfd, char *buffer, int buf_len);
+const char *comm_read_text(comm_socket sockfd, int max_len);
 
 /*
  * Read binary data from a socket, read until socket is closed,
@@ -113,7 +117,10 @@ comm_socket comm_connect_server(const char *hostname, int port);
  */
 comm_socket comm_start_server(int port);
 
-char **read_line(int *line_no, const char *in_buffer);
+/**
+ * compatability mode for recv
+ */
+int comm_recv(comm_socket sock, void *buffer, int buf_len, int flags);
 
 #ifdef __cplusplus
 }

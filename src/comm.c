@@ -6,37 +6,39 @@
 
 #include <clog.h>
 
-int comm_init() {
+int comm_init()
+{
 #ifdef _WIN32
-	WORD wVersionRequested;
-	WSADATA wsaData;
-	int err;
+    WORD wVersionRequested;
+    WSADATA wsaData;
+    int err;
 
-	wVersionRequested = MAKEWORD(2, 2);
+    wVersionRequested = MAKEWORD(2, 2);
 
-	err = WSAStartup(wVersionRequested, &wsaData);
-	if (err != 0) {
-		log_fat(_COMM, "WSAStartup failed with error: %d\n", err);
-		return 1;
-	}
+    err = WSAStartup(wVersionRequested, &wsaData);
+    if (err != 0)
+    {
+        log_fat(_COMM, "WSAStartup failed with error: %d\n", err);
+        return 1;
+    }
 
-	if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2) {
-		log_fat(_COMM, "Could not find Winsock.dll with version 2.2, please install one");
-		comm_clean();
-		return -1;
-	}
+    if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
+    {
+        log_fat(_COMM, "Could not find Winsock.dll with version 2.2, please install one");
+        comm_clean();
+        return -1;
+    }
 #endif
-	return 0;
+    return 0;
 }
 
 int comm_clean()
 {
 #ifdef _WIN32
-	WSACleanup();
+    WSACleanup();
 #endif
-	return 0;
+    return 0;
 }
-
 
 int comm_check_port(int port)
 {
@@ -94,111 +96,61 @@ int comm_write_binary(comm_socket sockfd, const void *in_buffer)
     return bwrite; //here it indicates error or success
 }
 
-char **read_line(int *line_no, const char *in_buffer)
+const char *comm_read_text(comm_socket sockfd, int max_len)
 {
-  *line_no = 0;
-  if(in_buffer == NULL){
-    return NULL;
-  }
-  if(in_buffer[0] == '\0'){
-    return NULL;
-  }
-  if(in_buffer[0] == '\n'){
-    return NULL;
-  }
-  if (strcmp(in_buffer, "\r\n") == 0) {
-	  return NULL;
-  }
-    char *buffer = (char *)calloc(sizeof(char), sizeof(in_buffer));
-    strcpy(buffer, in_buffer);
-    char **lines = (char **)calloc(sizeof(char *), 10);
-    char *temp = strtok(buffer, "\r\n");
-    int ptr = 0;
-    if (temp == NULL)
+    char *buffer = (char *)calloc(sizeof(char), max_len);
+    int read_bytes = comm_recv(sockfd, buffer, max_len, 0);
+    if (read_bytes < 0)
     {
-      *line_no = 1;
-      lines[0] = (char *)calloc(sizeof(char), sizeof(in_buffer));
-      strcpy(lines[0], in_buffer);
-      return lines;
+        return NULL;
     }
-    while (temp != NULL)
+    else if (read_bytes == 0)
     {
-        lines[ptr++] = temp;
-        temp = strtok(NULL, "\r\n");
+        return NULL;
     }
-    *line_no = ptr;
-    return lines;
+    if (buffer[read_bytes - 2] == '\r' && buffer[read_bytes - 1] == '\n')
+    {
+        buffer[read_bytes - 2] = '\0';
+    }
+    else if (buffer[read_bytes - 1] == '\r' || buffer[read_bytes] == '\n')
+    {
+        buffer[read_bytes - 1] = '\0';
+    }
+    return buffer;
 }
 
-int comm_read_text(comm_socket sockfd, char *buf, int buf_len){
-    if(buf == NULL){
-      return -1;
-    }
-    if(comm_read_binary(sockfd, buf, buf_len) < 0){
-      return -1;
-    }
-    buf[buf_len] = '\0';
-    return 0;
-}
-
-/*
-char *comm_read_text(comm_socket sockfd)
+int comm_recv(comm_socket sock, void *buffer, int bufflen, int flags)
 {
-    char *buf = (char *)calloc(sizeof(char), COMM_BUFFER_SIZE);
-    int ptr = 0;
-    memset(buf, '\0', 256);
-    int quit = 0;
-    for (ptr = 0; quit != 1; ptr++)
-    {
-        char *bread = recv(sockfd, buf + ptr, 1, 0);
-        if (bread)
-        {
-            // log_inf(_COMM, "Content read[%d]: %c", ptr, buf[ptr]);
-            if (buf[ptr] == '\n' || buf[ptr] == '\r')
-            {
-                buf[ptr] = '\0';
-                return buf;
-            }
-        }
-        else if (bread == 0)
-        { // EOF hit, client disconnected
-            log_inf(_COMM, "EOF hit");
-            return NULL;
-        }
-        else if (bread < 0)
-        { // read error
-            log_inf(_COMM, "read error exiting...");
-            return NULL;
-        }
-    }
-    return NULL;
+    return recv(sock, buffer, bufflen, flags);
 }
-*/
 
 int comm_read_binary(comm_socket sock, char *buffer, int bufflen)
 {
-  if(bufflen == 0)return 0;
-  int bytesRead = 0;
-  if (buffer == NULL)
-  {
-      buffer = (char *)calloc(1, COMM_BUFFER_SIZE);
-  }
-  bytesRead = recv(sock, buffer + bytesRead, bufflen - bytesRead, 0);
-  if (bytesRead < 0)
-  {
-    log_per(_COMM, "Read error");
-    return -1;
-  }
-  if(bytesRead == 0){
-    //EOF HIT, client disconnected
-    log_inf(_COMM, "EOF HIT");
-    return -1;
-  }
-  if(bytesRead < bufflen){
-    //poll for data, if data exist rerun subroutine
-    comm_read_binary(sock, buffer + bytesRead, bufflen - bytesRead);
-  }
-	return 0;
+    if (bufflen == 0)
+        return 0;
+    int bytesRead = 0;
+    if (buffer == NULL)
+    {
+        return -1;
+    }
+    bytesRead = read(sock, buffer, bufflen);
+    if (bytesRead < 0)
+    {
+        log_per(_COMM, "Read error");
+        return -1;
+    }
+    if (bytesRead == 0)
+    {
+        //EOF HIT, client disconnected
+        log_inf(_COMM, "EOF HIT");
+        return -1;
+    }
+    if (bytesRead < bufflen)
+    {
+        //poll for data, if data exist rerun subroutine
+        comm_read_binary(sock, buffer + bytesRead, bufflen - bytesRead);
+    }
+    return 0;
 }
 
 int comm_close_socket(comm_socket sockfd)
@@ -245,19 +197,11 @@ comm_socket comm_connect_server(const char *hostname, int port)
     memcpy((char *)&serv_addr.sin_addr.s_addr, (char *)server->h_addr, server->h_length);
     serv_addr.sin_port = htons(port);
     int i = 0;
-    //set sock for reuses
-    int option = 1;
-#ifndef _WIN32
-    if(setsockopt(sockfd,SOL_SOCKET,(SO_REUSEPORT | SO_REUSEADDR),(char*)&option,sizeof(option)) < 0){
-        log_err(_COMM, "cannot set options to socket");
-        return -1;
-    }
-#endif
     while (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
     {
         if (i++ > COMM_CON_MAX_ATTEMPTS)
         {
-        //guess other hostnames for the user
+            //guess other hostnames for the user
 #ifdef _WIN32
             closesocket(sockfd);
 #else
@@ -273,7 +217,7 @@ comm_socket comm_connect_server(const char *hostname, int port)
 
 comm_socket comm_start_server(int port)
 {
-	static int cont;
+    static int cont;
     static comm_socket servfd;
 
     struct sockaddr_in server, client;
@@ -292,11 +236,11 @@ comm_socket comm_start_server(int port)
     if (cont == port)
     {
         comm_socket clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
-		if (clifd == SOCKET_ERROR)
-		{
-			log_inf(_COMM, "Accept failed");
-			return -1;
-		}
+        if (clifd == SOCKET_ERROR)
+        {
+            log_inf(_COMM, "Accept failed");
+            return -1;
+        }
         log_inf(_COMM, "Connection accepted");
         return clifd;
     }
@@ -309,6 +253,16 @@ comm_socket comm_start_server(int port)
         log_err(_COMM, "could not create socket");
         return -1;
     }
+
+#ifndef _WIN32
+    //set sock for reuses
+    int option = 1;
+    if (setsockopt(servfd, SOL_SOCKET, (SO_REUSEPORT | SO_REUSEADDR), (char *)&option, sizeof(option)) < 0)
+    {
+        log_err(_COMM, "cannot set options to socket");
+        return -1;
+    }
+#endif
     //Bind
     if (bind(servfd, (struct sockaddr *)&server, sizeof(server)) < 0)
     {

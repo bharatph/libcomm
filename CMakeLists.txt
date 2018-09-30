@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(comm VERSION 0.7 DESCRIPTION "Cross-platfrom Networking library for C")
+project(comm VERSION 0.3.0 DESCRIPTION "Cross-platfrom Networking library for C")
 find_package(clog)
 add_library(comm src/comm.c)
 if (WIN32)

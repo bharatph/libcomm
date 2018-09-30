@@ -60,40 +60,20 @@ int test_write(){
 
 int test_read(){
     if(test_server(_D_PORT) < 0)return -1;
-    char buffer[8];
-    if(comm_read_text(sock, buffer, 7) < 0){
+    const char *buffer = comm_read_text(sock, 99);
+    if(buffer == NULL){
       printf("Test: Read Error\n");
+      return -1;
     }
-    if(buffer == NULL)return -1;
     printf("%s\n", buffer);
     return 0;
 }
-
-int test_read_lines(){
-  if(test_server(_D_PORT) < 0)return -1;
-  char buffer[100];
-  if(comm_read_text(sock, buffer, 10) < 0){
-    printf("Test: Read error");
-  }
-  if(buffer == NULL)return -1;
-  int *line_len = (int *)calloc(sizeof(int), 1);
-  char **lines = read_line(line_len, buffer);
-  if(*line_len == 0){
-    return -1;
-  }
-  int i = 0;
-  for(i = 0; i < *line_len; i++){
-    printf("Message[%d]: %s\n", i, lines[i]);
-  }
-}
-
 int main(int argc, char *argv[]){
     int status = -1;
     if(argc < 2){
         return -1;
     }
 	comm_init();
-	test_server(_D_PORT);
     if(strcmp(argv[1], "server") == 0){
         status = test_server(_D_PORT);
 	} else if (strcmp(argv[1], "server_loop") == 0) {
@@ -104,8 +84,6 @@ int main(int argc, char *argv[]){
         status = test_write();
     } else if(strcmp(argv[1], "read") == 0){
         status = test_read();
-    } else if(strcmp(argv[1], "read_lines") == 0){
-      status = test_read_lines();
     } else {
       printf("Unknown parameter\n");
       return -1;
