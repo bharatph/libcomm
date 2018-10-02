@@ -4,7 +4,7 @@
 #include <windef.h>
 #endif
 
-#include <clog.h>
+#include <clog/clog.h>
 
 int comm_init()
 {
