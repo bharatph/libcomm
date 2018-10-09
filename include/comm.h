@@ -84,7 +84,7 @@ int comm_write_text(comm_socket sockfd, const char *buffer);
  * @return buffer data from the socket. NULL indicates 
  * connection has been closed or error has been occured
  */
-const char *comm_read_text(comm_socket sockfd, int max_len);
+char *comm_read_text(comm_socket sockfd, int max_len);
 
 /*
  * Read binary data from a socket, read until socket is closed,

@@ -96,7 +96,7 @@ int comm_write_binary(comm_socket sockfd, const void *in_buffer)
     return bwrite; //here it indicates error or success
 }
 
-const char *comm_read_text(comm_socket sockfd, int max_len)
+char *comm_read_text(comm_socket sockfd, int max_len)
 {
     char *buffer = (char *)calloc(sizeof(char), max_len);
     int read_bytes = comm_recv(sockfd, buffer, max_len, 0);
