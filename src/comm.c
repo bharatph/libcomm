@@ -253,16 +253,6 @@ comm_socket comm_start_server(int port)
         log_err(_COMM, "could not create socket");
         return -1;
     }
-
-#ifndef _WIN32
-    //set sock for reuses
-    int option = 1;
-    if (setsockopt(servfd, SOL_SOCKET, (SO_REUSEPORT | SO_REUSEADDR), (char *)&option, sizeof(option)) < 0)
-    {
-        log_err(_COMM, "cannot set options to socket");
-        return -1;
-    }
-#endif
     //Bind
     if (bind(servfd, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
