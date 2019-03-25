@@ -1,7 +1,7 @@
 find_package(clog)
 find_path(COMM_INCLUDE_DIR comm.h /usr/local/include /usr/include $ENV{comm_DIR}/include)
 find_library(COMM_LIBS comm /usr/local/lib /usr/lib $ENV{comm_DIR}/lib)
-get_filename_component(COMM_LIBRARY_DIR ${COMM_LIBS} PATH)
+#get_filename_component(COMM_LIBRARY_DIR ${COMM_LIBS} PATH)
 if(COMM_INCLUDE_DIR)
 	if(COMM_LIBS)
 		set(COMM_FOUND "YES")
