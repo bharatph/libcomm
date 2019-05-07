@@ -194,6 +194,7 @@ xs_SOCKET comm_connect_server(const char *hostname, int port)
 
 xs_SOCKET comm_start_server(int port)
 {
+    static int cont;
     static xs_SOCKET servfd;
 
     struct sockaddr_in server, client;
@@ -209,11 +210,24 @@ xs_SOCKET comm_start_server(int port)
     server.sin_port = htons(port);
     cli_size = sizeof(struct sockaddr_in);
 
+    if (cont == port)
+    {
+        xs_SOCKET clifd = xs_accept(servfd, (struct sockaddr *)&client, &cli_size);
+        if (clifd == SOCKET_ERROR)
+        {
+            clog_i(_COMM, "Accept failed");
+            return -1;
+        }
+        clog_i(_COMM, "Connection accepted");
+        return clifd;
+    }
+    if (cont == 0)
+        cont = port;
     //Create socket
-    servfd = xs_socket(AF_INET, SOCK_STREAM, 0);
+    servfd = socket(AF_INET, SOCK_STREAM, 0);
     if (servfd == SOCKET_ERROR)
     {
-        clog_e(_COMM, "could not create xs_socket");
+        clog_e(_COMM, "could not create socket");
         return -1;
     }
     //Bind
@@ -224,8 +238,5 @@ xs_SOCKET comm_start_server(int port)
     }
     //Listen
     listen(servfd, COMM_SERV_BACKLOG);
-    //Accept and incoming connection
-    clog_i(_COMM, "Waiting for incoming connections...");
-    //accept connection from an incoming client
     return servfd;
 }
