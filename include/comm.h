@@ -18,8 +18,6 @@ extern "C" {
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-typedef int SOCKET;
-#define SOCKET_ERROR -1
 #elif _WIN32
 //#include <windows.h>
 //#include <ws2tcpip.h>
@@ -29,16 +27,15 @@ typedef int SOCKET;
 #define _CRT_SECURE_NO_WARNINGS
 	typedef short ssize_t;
 	typedef int socklen_t;
-#else
-	typedef int SOCKET;
 #error OS not supported
 #endif
+
+#include <crosssocket.h>
 
 #define COMM_BUFFER_SIZE 256
 #define COMM_CON_MAX_ATTEMPTS 5
 #define COMM_SERV_BACKLOG 10
 
-typedef SOCKET comm_socket;
 /*
  * Loads operating system specific libraries
  */
@@ -64,7 +61,7 @@ int comm_check_port(int port);
  * 0 for success
  * 1 for failure
  */
-int comm_write_binary(comm_socket sockfd, const void *buffer);
+int comm_write_binary(xs_SOCKET sockfd, const void *buffer);
 
 /*
  * Write data to a given socket
@@ -74,17 +71,17 @@ int comm_write_binary(comm_socket sockfd, const void *buffer);
  * 0 for success
  * 1 for failure
  */
-int comm_write_text(comm_socket sockfd, const char *buffer);
+int comm_write_text(xs_SOCKET sockfd, const char *buffer);
 
 /*
  * Read text data from a socket, reads a write or until max_len is
  * achieved. Strips the ending characters: \r, \n, \r\n.
  * The returned text might be less than max_len
  * @param sockfd The socket descriptor to write to
- * @return buffer data from the socket. NULL indicates 
+ * @return buffer data from the socket. NULL indicates
  * connection has been closed or error has been occured
  */
-char *comm_read_text(comm_socket sockfd, int max_len);
+char *comm_read_text(xs_SOCKET sockfd, int max_len);
 
 /*
  * Read binary data from a socket, read until socket is closed,
@@ -95,32 +92,32 @@ char *comm_read_text(comm_socket sockfd, int max_len);
  * @param The length of the buffer
  * @return buffer data from the socket
  */
-int comm_read_binary(comm_socket sockfd, char *buffer, int bufflen);
+int comm_read_binary(xs_SOCKET sockfd, char *buffer, int bufflen);
 
 /*
  * closes the socket if it open
  * @param sockfd The socket to be closed
  */
-int comm_close_socket(comm_socket sockfd);
+int comm_close_socket(xs_SOCKET sockfd);
 
 /** Connects to the server with the standard IPv4 and TCP stack
  * @param hostname IPv4 address or hostname
  * @param port Port number for the server to start
  * @return Socket descriptor of the started server
  */
-comm_socket comm_connect_server(const char *hostname, int port);
+xs_SOCKET comm_connect_server(const char *hostname, int port);
 
 //TODO support multiple server options
 /** Starts the server with the standard IPv4 and TCP stack
  * @param port Port number for the server to start
  * @return Socket descriptor of the started server
  */
-comm_socket comm_start_server(int port);
+xs_SOCKET comm_start_server(int port);
 
 /**
  * compatability mode for recv
  */
-int comm_recv(comm_socket sock, void *buffer, int buf_len, int flags);
+int comm_recv(xs_SOCKET sock, void *buffer, int buf_len, int flags);
 
 #ifdef __cplusplus
 }

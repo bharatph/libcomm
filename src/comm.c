@@ -18,13 +18,13 @@ int comm_init()
     err = WSAStartup(wVersionRequested, &wsaData);
     if (err != 0)
     {
-        log_fat(_COMM, "WSAStartup failed with error: %d\n", err);
+        clog_f(_COMM, "WSAStartup failed with error: %d\n", err);
         return 1;
     }
 
     if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
     {
-        log_fat(_COMM, "Could not find Winsock.dll with version 2.2, please install one");
+        clog_f(_COMM, "Could not find Winsock.dll with version 2.2, please install one");
         comm_clean();
         return -1;
     }
@@ -44,13 +44,13 @@ int comm_check_port(int port)
 {
     if (port < 0 || port > 65535)
     {
-        log_err(_COMM, "invalid port number, port number should be between 0 and 65536");
+        clog_e(_COMM, "invalid port number, port number should be between 0 and 65536");
         return -1;
     }
     return 0;
 }
 
-int comm_write_text(comm_socket sockfd, const char *in_buffer)
+int comm_write_text(xs_SOCKET sockfd, const char *in_buffer)
 {
     size_t blen = strlen(in_buffer);
     char *buffer = (char *)malloc(sizeof(char) * blen);
@@ -65,7 +65,7 @@ int comm_write_text(comm_socket sockfd, const char *in_buffer)
     }
     if (bwrite == -1)
     {
-        log_err(_COMM, "Write failed");
+        clog_e(_COMM, "Write failed");
     }
     else if (bwrite == 0)
     {
@@ -73,7 +73,7 @@ int comm_write_text(comm_socket sockfd, const char *in_buffer)
     return bwrite; //here it indicates error or success
 }
 
-int comm_write_binary(comm_socket sockfd, const void *in_buffer)
+int comm_write_binary(xs_SOCKET sockfd, const void *in_buffer)
 {
     size_t blen = strlen(in_buffer);
     char *buffer = (char *)malloc(blen);
@@ -88,7 +88,7 @@ int comm_write_binary(comm_socket sockfd, const void *in_buffer)
     }
     if (bwrite == -1)
     {
-        log_err(_COMM, "Write failed");
+        clog_e(_COMM, "Write failed");
     }
     else if (bwrite == 0)
     {
@@ -96,7 +96,7 @@ int comm_write_binary(comm_socket sockfd, const void *in_buffer)
     return bwrite; //here it indicates error or success
 }
 
-char *comm_read_text(comm_socket sockfd, int max_len)
+char *comm_read_text(xs_SOCKET sockfd, int max_len)
 {
     char *buffer = (char *)calloc(sizeof(char), max_len);
     int read_bytes = comm_recv(sockfd, buffer, max_len, 0);
@@ -119,12 +119,12 @@ char *comm_read_text(comm_socket sockfd, int max_len)
     return buffer;
 }
 
-int comm_recv(comm_socket sock, void *buffer, int bufflen, int flags)
+int comm_recv(xs_SOCKET sock, void *buffer, int bufflen, int flags)
 {
     return recv(sock, buffer, bufflen, flags);
 }
 
-int comm_read_binary(comm_socket sock, char *buffer, int bufflen)
+int comm_read_binary(xs_SOCKET sock, char *buffer, int bufflen)
 {
     if (bufflen == 0)
         return 0;
@@ -136,13 +136,13 @@ int comm_read_binary(comm_socket sock, char *buffer, int bufflen)
     bytesRead = read(sock, buffer, bufflen);
     if (bytesRead < 0)
     {
-        log_per(_COMM, "Read error");
+        clog_f(_COMM, "Read error");
         return -1;
     }
     if (bytesRead == 0)
     {
         //EOF HIT, client disconnected
-        log_inf(_COMM, "EOF HIT");
+        clog_i(_COMM, "EOF HIT");
         return -1;
     }
     if (bytesRead < bufflen)
@@ -153,24 +153,24 @@ int comm_read_binary(comm_socket sock, char *buffer, int bufflen)
     return 0;
 }
 
-int comm_close_socket(comm_socket sockfd)
+int comm_close_socket(xs_SOCKET sockfd)
 {
 #if defined(_WIN32)
-    if (closesocket(sockfd) == -1)
+    if (closexs_socket(sockfd) == -1)
 #else
     if (close(sockfd) == -1)
 #endif
     {
-        log_err(_COMM, "Disconnection error");
+        clog_e(_COMM, "Disconnection error");
         return -1;
     }
     else
-        log_inf(_COMM, "Disconnection Successful");
+        clog_i(_COMM, "Disconnection Successful");
     return 0;
 }
 
 //checking whether port is between 0 and 65536
-comm_socket comm_connect_server(const char *hostname, int port)
+xs_SOCKET comm_connect_server(const char *hostname, int port)
 {
     struct sockaddr_in serv_addr;
     struct hostent *server;
@@ -178,17 +178,17 @@ comm_socket comm_connect_server(const char *hostname, int port)
     {
         return -1;
     }
-    //Create socket
-    comm_socket sockfd = socket(AF_INET, SOCK_STREAM, 0);
+    //Create xs_socket
+    xs_SOCKET sockfd = xs_socket(AF_INET, SOCK_STREAM, 0);
     if (sockfd == SOCKET_ERROR)
     {
-        log_err(_COMM, "Could not create socket");
+        clog_e(_COMM, "Could not create xs_socket");
         return -1;
     }
-    log_inf(_COMM, "Socket created");
+    clog_i(_COMM, "Socket created");
     if ((server = gethostbyname(hostname)) == NULL)
     {
-        log_err(_COMM, "no such host found");
+        clog_e(_COMM, "no such host found");
         return -1;
     }
     memset((char *)&serv_addr, 0, sizeof(serv_addr));
@@ -203,22 +203,21 @@ comm_socket comm_connect_server(const char *hostname, int port)
         {
             //guess other hostnames for the user
 #ifdef _WIN32
-            closesocket(sockfd);
+            closexs_socket(sockfd);
 #else
             close(sockfd);
 #endif
-            log_err(_COMM, "cannot establish connection to %s on port %d", hostname, port);
+            clog_e(_COMM, "cannot establish connection to %s on port %d", hostname, port);
             return -1;
         }
     }
-    log_inf(_COMM, "connection established successfully to %s on port %d", hostname, port);
+    clog_i(_COMM, "connection established successfully to %s on port %d", hostname, port);
     return sockfd;
 }
 
-comm_socket comm_start_server(int port)
+xs_SOCKET comm_start_server(int port)
 {
-    static int cont;
-    static comm_socket servfd;
+    static xs_SOCKET servfd;
 
     struct sockaddr_in server, client;
     socklen_t cli_size;
@@ -233,43 +232,23 @@ comm_socket comm_start_server(int port)
     server.sin_port = htons(port);
     cli_size = sizeof(struct sockaddr_in);
 
-    if (cont == port)
-    {
-        comm_socket clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
-        if (clifd == SOCKET_ERROR)
-        {
-            log_inf(_COMM, "Accept failed");
-            return -1;
-        }
-        log_inf(_COMM, "Connection accepted");
-        return clifd;
-    }
-    if (cont == 0)
-        cont = port;
     //Create socket
-    servfd = socket(AF_INET, SOCK_STREAM, 0);
+    servfd = xs_socket(AF_INET, SOCK_STREAM, 0);
     if (servfd == SOCKET_ERROR)
     {
-        log_err(_COMM, "could not create socket");
+        clog_e(_COMM, "could not create xs_socket");
         return -1;
     }
     //Bind
     if (bind(servfd, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
-        log_err(_COMM, "bind failed");
+        clog_e(_COMM, "bind failed");
         return -1;
     }
     //Listen
     listen(servfd, COMM_SERV_BACKLOG);
     //Accept and incoming connection
-    log_inf(_COMM, "Waiting for incoming connections...");
+    clog_i(_COMM, "Waiting for incoming connections...");
     //accept connection from an incoming client
-    comm_socket clifd = accept(servfd, (struct sockaddr *)&client, &cli_size);
-    if (clifd == SOCKET_ERROR)
-    {
-        log_inf(_COMM, "Accept failed");
-        return -1;
-    }
-    log_inf(_COMM, "Connection accepted");
-    return clifd;
+    return servfd;
 }

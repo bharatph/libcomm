@@ -11,7 +11,7 @@
 
 static const char *TAG = "TEST";
 
-comm_socket sock = -1;
+xs_SOCKET sock = -1;
 
 
 int test_server(int port){
