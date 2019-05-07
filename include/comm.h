@@ -114,11 +114,6 @@ xs_SOCKET comm_connect_server(const char *hostname, int port);
  */
 xs_SOCKET comm_start_server(int port);
 
-/**
- * compatability mode for recv
- */
-int comm_recv(xs_SOCKET sock, void *buffer, int buf_len, int flags);
-
 #ifdef __cplusplus
 }
 #endif

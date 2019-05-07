@@ -1,21 +1,15 @@
-cmake_minimum_required(VERSION 3.0)
-project(comm VERSION 0.3.0 DESCRIPTION "Cross-platfrom Networking library for C")
+cmake_minimum_required(VERSION 3.8)
+project(comm VERSION 0.3.0 LANGUAGES C CXX)
 find_package(clog)
-find_package(crosssocket)
-add_library(comm src/comm.c)
-if (WIN32)
-    target_link_libraries(comm wsock32 ws2_32)
-endif ()
+add_library(comm include/comm.h src/comm.c)
 
 set_target_properties(comm PROPERTIES VERSION ${PROJECT_VERSION})
 
-
 target_link_libraries(comm ${CLOG_LIBS})
-target_link_libraries(comm crosssocket)
 
+target_include_directories(comm PRIVATE crosssguid)
 target_include_directories(comm PRIVATE include)
 target_include_directories(comm PRIVATE ${CLOG_INCLUDE_DIR})
-target_include_directories(comm PRIVATE crosssocket)
 
 add_subdirectory(test)
 

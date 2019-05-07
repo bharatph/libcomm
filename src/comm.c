@@ -5,39 +5,16 @@
 #endif
 
 #include <clog/clog.h>
+#include <crosssocket.h>
 
 int comm_init()
 {
-#ifdef _WIN32
-    WORD wVersionRequested;
-    WSADATA wsaData;
-    int err;
-
-    wVersionRequested = MAKEWORD(2, 2);
-
-    err = WSAStartup(wVersionRequested, &wsaData);
-    if (err != 0)
-    {
-        clog_f(_COMM, "WSAStartup failed with error: %d\n", err);
-        return 1;
-    }
-
-    if (LOBYTE(wsaData.wVersion) != 2 || HIBYTE(wsaData.wVersion) != 2)
-    {
-        clog_f(_COMM, "Could not find Winsock.dll with version 2.2, please install one");
-        comm_clean();
-        return -1;
-    }
-#endif
-    return 0;
+    return xs_init();
 }
 
 int comm_clean()
 {
-#ifdef _WIN32
-    WSACleanup();
-#endif
-    return 0;
+    return xs_clean();
 }
 
 int comm_check_port(int port)
@@ -99,7 +76,7 @@ int comm_write_binary(xs_SOCKET sockfd, const void *in_buffer)
 char *comm_read_text(xs_SOCKET sockfd, int max_len)
 {
     char *buffer = (char *)calloc(sizeof(char), max_len);
-    int read_bytes = comm_recv(sockfd, buffer, max_len, 0);
+    int read_bytes = xs_recv(sockfd, buffer, max_len, 0);
     if (read_bytes < 0)
     {
         return NULL;
