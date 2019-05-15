@@ -12,7 +12,6 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 add_library(comm ${CMAKE_CURRENT_SOURCE_DIR}/src/comm.c)
-set_property(TARGET comm PROPERTY POSITION_INDEPENDENT_CODE ON)
 target_include_directories(comm PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
