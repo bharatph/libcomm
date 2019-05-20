@@ -132,18 +132,7 @@ int comm_read_binary(xs_SOCKET sock, char *buffer, int bufflen)
 
 int comm_close_socket(xs_SOCKET sockfd)
 {
-#if defined(_WIN32)
-    if (closexs_socket(sockfd) == -1)
-#else
-    if (close(sockfd) == -1)
-#endif
-    {
-        clog_e(_COMM, "Disconnection error");
-        return -1;
-    }
-    else
-        clog_i(_COMM, "Disconnection Successful");
-    return 0;
+  return xs_close(sockfd);
 }
 
 //checking whether port is between 0 and 65536
