@@ -19,21 +19,18 @@ extern "C" {
 #include <arpa/inet.h>
 #include <netdb.h>
 #elif _WIN32
-//#include <windows.h>
-//#include <ws2tcpip.h>
 #include <winsock2.h>
-#include <Windows.h>
-#define _WINSOCK_DEPRECATED_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-	typedef short ssize_t;
-	typedef int socklen_t;
+typedef short ssize_t;
+typedef int socklen_t;
+#define xs_SOCKET SOCKET
+#define xs_ERROR INVALID_SOCKET
+#else
 #error OS not supported
 #endif
 
 #include <crosssocket.h>
 
 #define COMM_BUFFER_SIZE 256
-#define COMM_CON_MAX_ATTEMPTS 5
 #define COMM_SERV_BACKLOG 10
 
 /*

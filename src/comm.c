@@ -2,6 +2,7 @@
 
 #ifdef _WIN32
 #include <windef.h>
+#include <ws2tcpip.h>
 #endif
 
 #include <clog/clog.h>
@@ -31,9 +32,9 @@ int comm_write_text(xs_SOCKET sockfd, const char *in_buffer)
 {
     size_t blen = strlen(in_buffer);
     char *buffer = (char *)malloc(sizeof(char) * blen);
-    strcpy(buffer, in_buffer);
-    ssize_t bwrite = 0;
-    size_t write_len = blen;
+    memcpy(buffer, in_buffer, blen);
+    int bwrite = 0;
+    int write_len = (int)blen;
     bwrite = send(sockfd, buffer, write_len, 0);
     while (bwrite > 0)
     {
@@ -54,9 +55,9 @@ int comm_write_binary(xs_SOCKET sockfd, const void *in_buffer)
 {
     size_t blen = strlen(in_buffer);
     char *buffer = (char *)malloc(blen);
-    strcpy(buffer, in_buffer);
-    ssize_t bwrite = -1;
-    ssize_t write_len = blen;
+    memcpy(buffer, in_buffer, blen);
+    int bwrite = -1;
+    int write_len = (int)blen;
     bwrite = send(sockfd, buffer, write_len, 0);
     while (bwrite > 0)
     {
@@ -110,7 +111,7 @@ int comm_read_binary(xs_SOCKET sock, char *buffer, int bufflen)
     {
         return -1;
     }
-    bytesRead = read(sock, buffer, bufflen);
+    bytesRead = xs_recv(sock, buffer, bufflen, 0);
     if (bytesRead < 0)
     {
         clog_f(_COMM, "Read error");
@@ -138,49 +139,57 @@ int comm_close_socket(xs_SOCKET sockfd)
 //checking whether port is between 0 and 65536
 xs_SOCKET comm_connect_server(const char *hostname, int port)
 {
-    struct sockaddr_in serv_addr;
-    struct hostent *server;
+    //struct sockaddr_in serv_addr;
+	//struct hostent *server;
     if (comm_check_port(port) != 0)
     {
-        return -1;
+        return xs_ERROR;
     }
-    //Create xs_socket
-    xs_SOCKET sockfd = xs_socket(AF_INET, SOCK_STREAM, 0);
-    if (sockfd == SOCKET_ERROR)
-    {
-        clog_e(_COMM, "Could not create xs_socket");
-        return -1;
-    }
-    clog_i(_COMM, "Socket created");
-    if ((server = gethostbyname(hostname)) == NULL)
-    {
-        clog_e(_COMM, "no such host found");
-        return -1;
-    }
-    memset((char *)&serv_addr, 0, sizeof(serv_addr));
-    serv_addr.sin_family = AF_INET;
-    //inet_pton(AF_INET, (char *)server->h_addr, &serv_addr);
-    memcpy((char *)&serv_addr.sin_addr.s_addr, (char *)server->h_addr, server->h_length);
-    serv_addr.sin_port = htons(port);
-    int i = 0;
-    while (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) == -1)
-    {
-        if (i++ > COMM_CON_MAX_ATTEMPTS)
-        {
-            //guess other hostnames for the user
-#ifdef _WIN32
-            closexs_socket(sockfd);
-#else
-            close(sockfd);
-#endif
-            clog_e(_COMM, "cannot establish connection to %s on port %d", hostname, port);
-            return -1;
-        }
-    }
-    clog_i(_COMM, "connection established successfully to %s on port %d", hostname, port);
-    return sockfd;
-}
 
+    //
+	char port_s[16];
+	snprintf(port_s, 15, "%d", port);
+
+    struct addrinfo hints;
+	struct addrinfo *result, *rp;
+	int s;
+	xs_SOCKET sock = xs_ERROR;
+
+	memset(&hints, 0, sizeof(struct addrinfo));
+	hints.ai_family = AF_UNSPEC;
+	hints.ai_socktype = SOCK_STREAM;
+	hints.ai_flags = 0;
+	hints.ai_protocol = 0;
+    clog_enable();
+
+	s = getaddrinfo(hostname, (const char *)port_s, &hints, &result);
+	if (s != 0) {
+		clog_e(_COMM, "getaddrinfo: %s\n", gai_strerror(s));
+		return xs_ERROR;
+	}
+
+	for (rp = result; rp != NULL; rp = rp->ai_next) {
+		sock = socket(rp->ai_family, rp->ai_socktype,
+			rp->ai_protocol);
+		if (sock == xs_ERROR) {
+			continue;
+		}
+		if (connect(sock, rp->ai_addr, (int)rp->ai_addrlen) != xs_ERROR) {
+            clog_i(_COMM, "connection established successfully to %s on port %d", hostname, port);
+			break;
+		}
+		xs_close(sock);
+	}
+	
+	freeaddrinfo(result);
+    
+    if(rp  == NULL) {
+        clog_i(_COMM, "Connection failed");
+    }
+    
+    return sock;
+}
+	
 xs_SOCKET comm_start_server(int port)
 {
     static int cont;
@@ -191,21 +200,21 @@ xs_SOCKET comm_start_server(int port)
 
     if (comm_check_port(port) < 0)
     {
-        return -1;
+        return xs_ERROR;
     }
     //Prepare the sockaddr_in structure
-    server.sin_family = AF_INET;
+    server.sin_family = AF_UNSPEC;
     server.sin_addr.s_addr = INADDR_ANY;
-    server.sin_port = htons(port);
+    server.sin_port = htons((u_short)port);
     cli_size = sizeof(struct sockaddr_in);
 
     if (cont == port)
     {
         xs_SOCKET clifd = xs_accept(servfd, (struct sockaddr *)&client, &cli_size);
-        if (clifd == SOCKET_ERROR)
+        if (clifd == xs_ERROR)
         {
             clog_i(_COMM, "Accept failed");
-            return -1;
+            return xs_ERROR;
         }
         clog_i(_COMM, "Connection accepted");
         return clifd;
@@ -213,17 +222,17 @@ xs_SOCKET comm_start_server(int port)
     if (cont == 0)
         cont = port;
     //Create socket
-    servfd = socket(AF_INET, SOCK_STREAM, 0);
-    if (servfd == SOCKET_ERROR)
+    servfd = xs_socket(AF_UNSPEC, SOCK_STREAM, 0);
+    if (servfd == xs_ERROR)
     {
         clog_e(_COMM, "could not create socket");
-        return -1;
+        return xs_ERROR;
     }
     //Bind
     if (bind(servfd, (struct sockaddr *)&server, sizeof(server)) < 0)
     {
         clog_e(_COMM, "bind failed");
-        return -1;
+        return xs_ERROR;
     }
     //Listen
     listen(servfd, COMM_SERV_BACKLOG);
