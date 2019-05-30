@@ -74,4 +74,5 @@ endif()
 
 if (COMM_TESTS)
   add_subdirectory(test)
+  enable_testing()
 endif()

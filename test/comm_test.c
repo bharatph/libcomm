@@ -9,14 +9,14 @@
 
 #define _D_PORT 3500
 
-static const char *TAG = "TEST";
+// static const char *TAG = "TEST";
 
 xs_SOCKET sock = -1;
 
 
 int test_server(int port){
     sock = comm_start_server(port);
-    if(sock == SOCKET_ERROR){
+    if(sock == xs_ERROR){
 		comm_close_socket(sock);
         return -1;
     } else return 0;
@@ -26,7 +26,7 @@ int test_server_loop(int port) {
 	int loop = 3;
 	while (loop --> 0) {
 		sock = comm_start_server(port);
-		if (sock == SOCKET_ERROR) {
+		if (sock == xs_ERROR) {
 			comm_close_socket(sock);
 			return -1;
 		}
@@ -36,6 +36,7 @@ int test_server_loop(int port) {
 
 void *start_server(void *port){
   //test_server((*(int *)port));
+  return NULL;
 }
 
 int test_connection(){
